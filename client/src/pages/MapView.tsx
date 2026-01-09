@@ -44,23 +44,23 @@ const createWeatherBadge = (
     className: "weather-badge-marker",
     html: `
       <div style="display: flex; flex-direction: column; align-items: center;">
-        <div style="position: relative; width: 40px; height: 40px;">
+        <div style="position: relative; width: 46px; height: 46px;">
           <!-- Compass circle -->
           <div style="
-            width: 40px;
-            height: 40px;
+            width: 46px;
+            height: 46px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
-            border: 2px solid ${waterColor};
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            border: 2.5px solid ${waterColor};
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            line-height: 1.1;
+            line-height: 1.15;
           ">
-            <span style="font-size: 12px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
-            <span style="font-size: 9px; font-weight: 600; color: #64748b;">${windText}</span>
+            <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
+            <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
           </div>
           <!-- Wind direction pointer -->
           ${windDir != null ? `
@@ -68,30 +68,30 @@ const createWeatherBadge = (
             position: absolute;
             top: 0;
             left: 0;
-            width: 40px;
-            height: 40px;
+            width: 46px;
+            height: 46px;
             transform: rotate(${arrowRotation}deg);
           ">
             <div style="
               position: absolute;
-              top: -8px;
+              top: -4px;
               left: 50%;
               transform: translateX(-50%);
               width: 0;
               height: 0;
-              border-left: 7px solid transparent;
-              border-right: 7px solid transparent;
-              border-bottom: 12px solid ${waterColor};
-              filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+              border-left: 8px solid transparent;
+              border-right: 8px solid transparent;
+              border-bottom: 14px solid ${waterColor};
+              filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
             "></div>
           </div>
           ` : ''}
         </div>
       </div>
     `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -22],
+    iconSize: [54, 54],
+    iconAnchor: [27, 27],
+    popupAnchor: [0, -27],
   });
 };
 
