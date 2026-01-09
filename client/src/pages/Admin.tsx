@@ -3,7 +3,7 @@ import { useSpots } from "@/hooks/use-spots";
 import { Header } from "@/components/Header";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Trash2, Edit2, Save, X, Upload, Loader2, MapPin, Fish
+  Trash2, Edit2, Save, X, Upload, Loader2, MapPin, Fish, Video
 } from "lucide-react";
 import type { FishingSpot } from "@shared/schema";
 import { resolveImageUrl } from "@/lib/image-url";
@@ -217,13 +217,23 @@ export default function Admin() {
                   // View mode
                   <div className="flex gap-4">
                     {/* Image */}
-                    <div className="w-40 h-24 shrink-0 rounded-lg overflow-hidden bg-muted">
+                    <div className={`w-40 h-24 shrink-0 rounded-lg overflow-hidden ${spot.spotType === "webcam" ? "bg-purple-100" : "bg-muted"}`}>
                       {spot.imageUrl ? (
                         <img
                           src={resolveImageUrl(spot.imageUrl) || undefined}
                           alt={spot.name}
                           className="w-full h-full object-cover"
                         />
+                      ) : spot.spotType === "webcam" && spot.webcamUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
+                        <img
+                          src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                          alt={spot.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : spot.spotType === "webcam" ? (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-200 to-violet-100">
+                          <Video className="w-8 h-8 text-purple-400" />
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Fish className="w-8 h-8 text-muted-foreground/30" />
