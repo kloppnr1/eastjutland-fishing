@@ -292,5 +292,22 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "windSpeed": null,
     "windDirection": null,
     "lastUpdated": null
+  },
+  {
+    "id": 31,
+    "name": "Vedersø Klit (Webcam)",
+    "latitude": "56.1833",
+    "longitude": "8.1167",
+    "description": "Live webcam fra Vedersø Klit på vestkysten.",
+    "spotType": "webcam",
+    "bestFor": "",
+    "imageUrl": null,
+    "webcamUrl": "https://g0.ipcamlive.com/player/player.php?alias=5e009c2e9e94b&autoplay=0",
+    "timelapseUrl": null,
+    "currentWaterTemp": null,
+    "currentAirTemp": null,
+    "windSpeed": null,
+    "windDirection": null,
+    "lastUpdated": null
   }
 ];
