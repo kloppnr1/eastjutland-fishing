@@ -13,6 +13,7 @@ interface Spot {
   bestFor: string;
   imageUrl: string | null;
   webcamUrl: string | null;
+  timelapseUrl: string | null;
   currentWaterTemp: number | null;
   lastUpdated: string | null;
 }
@@ -43,6 +44,7 @@ export const BUNDLED_SPOTS: FishingSpot[] = ${JSON.stringify(
       bestFor: spot.bestFor,
       imageUrl: spot.imageUrl,
       webcamUrl: spot.webcamUrl || null,
+      timelapseUrl: spot.timelapseUrl || null,
       currentWaterTemp: null,
       currentAirTemp: null,
       windSpeed: null,

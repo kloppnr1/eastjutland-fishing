@@ -188,6 +188,7 @@
       "bestFor": "",
       "imageUrl": null,
       "webcamUrl": "https://images.weserv.nl/?url=www.kblvejr.dk/vejrbilleder/nordost.jpg",
+      "timelapseUrl": "https://corsproxy.io/?url=http://kblvejr.dk/vejrbilleder/Intraday_nordost_video.mp4",
       "lastUpdated": null
     }
   ],

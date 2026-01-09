@@ -10,11 +10,12 @@ import { useState, useEffect, useCallback } from "react";
 import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
 
-// Webcam component that handles both iframe and image webcams
-function WebcamSection({ webcamUrl, spotName }: { webcamUrl: string; spotName: string }) {
-  const isImageWebcam = /\.(jpg|jpeg|png|gif|webp)$/i.test(webcamUrl);
+// Webcam component that handles both iframe and image webcams, with optional timelapse
+function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: string; timelapseUrl?: string | null; spotName: string }) {
+  const isImageWebcam = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(webcamUrl);
   const [imageKey, setImageKey] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showTimelapse, setShowTimelapse] = useState(false);
 
   const refreshImage = useCallback(() => {
     setIsRefreshing(true);
@@ -24,10 +25,10 @@ function WebcamSection({ webcamUrl, spotName }: { webcamUrl: string; spotName: s
 
   // Auto-refresh image webcams every 30 seconds
   useEffect(() => {
-    if (!isImageWebcam) return;
+    if (!isImageWebcam || showTimelapse) return;
     const interval = setInterval(refreshImage, 30000);
     return () => clearInterval(interval);
-  }, [isImageWebcam, refreshImage]);
+  }, [isImageWebcam, showTimelapse, refreshImage]);
 
   return (
     <motion.div
@@ -39,23 +40,42 @@ function WebcamSection({ webcamUrl, spotName }: { webcamUrl: string; spotName: s
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-display font-bold flex items-center">
           <Video className="w-6 h-6 text-primary mr-3" />
-          Live webcam
+          {showTimelapse ? "Timelapse" : "Live webcam"}
         </h2>
-        {isImageWebcam && (
-          <button
-            onClick={refreshImage}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Opdater
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {timelapseUrl && (
+            <button
+              onClick={() => setShowTimelapse(!showTimelapse)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-colors"
+            >
+              {showTimelapse ? "Vis live" : "Vis timelapse"}
+            </button>
+          )}
+          {isImageWebcam && !showTimelapse && (
+            <button
+              onClick={refreshImage}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Opdater
+            </button>
+          )}
+        </div>
       </div>
       <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-        {isImageWebcam ? (
+        {showTimelapse && timelapseUrl ? (
+          <video
+            src={timelapseUrl}
+            controls
+            autoPlay
+            loop
+            muted
+            className="w-full h-full object-cover"
+          />
+        ) : isImageWebcam ? (
           <img
             key={imageKey}
-            src={`${webcamUrl}?t=${imageKey}`}
+            src={`${webcamUrl}${webcamUrl.includes('?') ? '&' : '?'}t=${imageKey}`}
             alt={`Webcam ved ${spotName}`}
             className="w-full h-full object-cover"
           />
@@ -69,7 +89,7 @@ function WebcamSection({ webcamUrl, spotName }: { webcamUrl: string; spotName: s
           />
         )}
       </div>
-      {isImageWebcam && (
+      {isImageWebcam && !showTimelapse && (
         <p className="text-xs text-muted-foreground mt-2 text-center">
           Opdateres automatisk hvert 30. sekund
         </p>
@@ -449,7 +469,7 @@ export default function SpotDetail() {
 
             {/* Webcam Section */}
             {spot.webcamUrl && (
-              <WebcamSection webcamUrl={spot.webcamUrl} spotName={spot.name} />
+              <WebcamSection webcamUrl={spot.webcamUrl} timelapseUrl={spot.timelapseUrl} spotName={spot.name} />
             )}
 
           </div>
