@@ -275,5 +275,22 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "windSpeed": null,
     "windDirection": null,
     "lastUpdated": null
+  },
+  {
+    "id": 30,
+    "name": "Juelsminde Marina (Webcam)",
+    "latitude": "55.7089",
+    "longitude": "10.0131",
+    "description": "Live webcam fra Juelsminde Marina.",
+    "spotType": "webcam",
+    "bestFor": "",
+    "imageUrl": null,
+    "webcamUrl": "https://juelsmindehavn.dk/kamera/Juelsmindemarina.jpg",
+    "timelapseUrl": null,
+    "currentWaterTemp": null,
+    "currentAirTemp": null,
+    "windSpeed": null,
+    "windDirection": null,
+    "lastUpdated": null
   }
 ];

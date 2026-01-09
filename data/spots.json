@@ -192,7 +192,19 @@
       "webcamUrl": "https://images.weserv.nl/?url=www.kblvejr.dk/vejrbilleder/nordost.jpg",
       "timelapseUrl": "http://kblvejr.dk/vejrbilleder/Intraday_nordost_video.mp4",
       "lastUpdated": null
+    },
+    {
+      "id": 30,
+      "name": "Juelsminde Marina (Webcam)",
+      "latitude": "55.7089",
+      "longitude": "10.0131",
+      "description": "Live webcam fra Juelsminde Marina.",
+      "spotType": "webcam",
+      "bestFor": "",
+      "imageUrl": null,
+      "webcamUrl": "https://juelsmindehavn.dk/kamera/Juelsmindemarina.jpg",
+      "lastUpdated": null
     }
   ],
-  "nextId": 30
+  "nextId": 31
 }
