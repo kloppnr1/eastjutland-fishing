@@ -525,11 +525,6 @@ export default function SpotDetail() {
               )}
             </motion.div>
 
-            {/* Webcam Section */}
-            {spot.webcamUrl && (
-              <WebcamSection webcamUrl={spot.webcamUrl} timelapseUrl={spot.timelapseUrl} spotName={spot.name} />
-            )}
-
           </div>
 
           {/* Sidebar - Temperature focus */}
