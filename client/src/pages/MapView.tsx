@@ -36,7 +36,7 @@ const createWeatherBadge = (
   windDir: number | null
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-  const waterText = waterTemp != null ? waterTemp.toFixed(0) : "--";
+  const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
   const arrowRotation = windDir != null ? windDir + 180 : 0;
 
