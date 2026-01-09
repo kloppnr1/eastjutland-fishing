@@ -37,11 +37,11 @@ const createWeatherBadge = (
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(0) : "--";
 
-  // SVG arrow for wind direction
+  // SVG arrow for wind direction (chevron only)
   const arrowRotation = windDir != null ? windDir + 180 : 0;
   const windArrow = windDir != null
-    ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
-        <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+    ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+        <path d="M18 15L12 9L6 15"/>
        </svg>`
     : '';
 
