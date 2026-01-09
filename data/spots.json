@@ -178,7 +178,18 @@
       "windSpeed": null,
       "windDirection": null,
       "lastUpdated": null
+    },
+    {
+      "id": 29,
+      "name": "Kaløvig Havn (Webcam NØ)",
+      "latitude": "56.2383",
+      "longitude": "10.3383",
+      "description": "Webcam fra Kaløvig Bådelaug med udsigt mod nordøst.",
+      "bestFor": "",
+      "imageUrl": null,
+      "webcamUrl": "http://www.kblvejr.dk/vejrbilleder/nordost.jpg",
+      "lastUpdated": null
     }
   ],
-  "nextId": 29
+  "nextId": 30
 }

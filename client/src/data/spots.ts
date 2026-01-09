@@ -228,5 +228,20 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "windSpeed": null,
     "windDirection": null,
     "lastUpdated": null
+  },
+  {
+    "id": 29,
+    "name": "Kaløvig Havn (Webcam NØ)",
+    "latitude": "56.2383",
+    "longitude": "10.3383",
+    "description": "Webcam fra Kaløvig Bådelaug med udsigt mod nordøst.",
+    "bestFor": "",
+    "imageUrl": null,
+    "webcamUrl": "http://www.kblvejr.dk/vejrbilleder/nordost.jpg",
+    "currentWaterTemp": null,
+    "currentAirTemp": null,
+    "windSpeed": null,
+    "windDirection": null,
+    "lastUpdated": null
   }
 ];

@@ -3,12 +3,80 @@ import { Header } from "@/components/Header";
 import { useRoute, Link } from "wouter";
 import {
   ArrowLeft, Thermometer, Clock,
-  Fish, Wind, Info, Navigation, TrendingUp, MapPin, Video
+  Fish, Wind, Info, Navigation, TrendingUp, MapPin, Video, RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
+
+// Webcam component that handles both iframe and image webcams
+function WebcamSection({ webcamUrl, spotName }: { webcamUrl: string; spotName: string }) {
+  const isImageWebcam = /\.(jpg|jpeg|png|gif|webp)$/i.test(webcamUrl);
+  const [imageKey, setImageKey] = useState(Date.now());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const refreshImage = useCallback(() => {
+    setIsRefreshing(true);
+    setImageKey(Date.now());
+    setTimeout(() => setIsRefreshing(false), 500);
+  }, []);
+
+  // Auto-refresh image webcams every 30 seconds
+  useEffect(() => {
+    if (!isImageWebcam) return;
+    const interval = setInterval(refreshImage, 30000);
+    return () => clearInterval(interval);
+  }, [isImageWebcam, refreshImage]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="bg-card rounded-3xl p-8 shadow-xl border border-border/50"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-display font-bold flex items-center">
+          <Video className="w-6 h-6 text-primary mr-3" />
+          Live webcam
+        </h2>
+        {isImageWebcam && (
+          <button
+            onClick={refreshImage}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Opdater
+          </button>
+        )}
+      </div>
+      <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+        {isImageWebcam ? (
+          <img
+            key={imageKey}
+            src={`${webcamUrl}?t=${imageKey}`}
+            alt={`Webcam ved ${spotName}`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <iframe
+            src={webcamUrl}
+            className="w-full h-full"
+            frameBorder="0"
+            allowFullScreen
+            title={`Webcam ved ${spotName}`}
+          />
+        )}
+      </div>
+      {isImageWebcam && (
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Opdateres automatisk hvert 30. sekund
+        </p>
+      )}
+    </motion.div>
+  );
+}
 
 // Extract HH:mm in Danish timezone
 const formatDanishTime = (input: string | Date | null): string => {
@@ -381,26 +449,7 @@ export default function SpotDetail() {
 
             {/* Webcam Section */}
             {spot.webcamUrl && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-card rounded-3xl p-8 shadow-xl border border-border/50"
-              >
-                <h2 className="text-2xl font-display font-bold mb-6 flex items-center">
-                  <Video className="w-6 h-6 text-primary mr-3" />
-                  Live webcam
-                </h2>
-                <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-                  <iframe
-                    src={spot.webcamUrl}
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allowFullScreen
-                    title={`Webcam ved ${spot.name}`}
-                  />
-                </div>
-              </motion.div>
+              <WebcamSection webcamUrl={spot.webcamUrl} spotName={spot.name} />
             )}
 
           </div>
