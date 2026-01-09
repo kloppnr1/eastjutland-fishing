@@ -10,6 +10,7 @@ interface Spot {
   latitude: string;
   longitude: string;
   description: string;
+  spotType: string | null;
   bestFor: string;
   imageUrl: string | null;
   webcamUrl: string | null;
@@ -41,6 +42,7 @@ export const BUNDLED_SPOTS: FishingSpot[] = ${JSON.stringify(
       latitude: spot.latitude,
       longitude: spot.longitude,
       description: spot.description,
+      spotType: spot.spotType || "fishing",
       bestFor: spot.bestFor,
       imageUrl: spot.imageUrl,
       webcamUrl: spot.webcamUrl || null,

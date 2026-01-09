@@ -251,6 +251,71 @@ export default function SpotDetail() {
     );
   }
 
+  const isWebcam = spot.spotType === "webcam";
+
+  // Simplified webcam view
+  if (isWebcam) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col pb-20">
+        <Header />
+
+        {/* Back button bar */}
+        <div className="bg-gradient-to-r from-purple-600 to-violet-500 py-4">
+          <div className="container mx-auto px-4 md:px-6">
+            <Link href="/" className="inline-flex items-center text-white/80 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Tilbage
+            </Link>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+          {/* Title and Map Link */}
+          <div className="flex flex-wrap items-center gap-4 mb-8">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-3xl md:text-5xl font-display font-bold text-purple-700 flex items-center gap-3"
+            >
+              <Video className="w-10 h-10" />
+              {spot.name}
+            </motion.h1>
+            <Link
+              href={`/map?lat=${spot.latitude}&lng=${spot.longitude}`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-full text-sm font-medium transition-colors"
+            >
+              <MapPin className="w-4 h-4" />
+              Se på kort
+            </Link>
+          </div>
+
+          {/* Webcam Section */}
+          {spot.webcamUrl && (
+            <WebcamSection webcamUrl={spot.webcamUrl} timelapseUrl={spot.timelapseUrl} spotName={spot.name} />
+          )}
+
+          {/* Description */}
+          {spot.description && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-8 bg-card rounded-3xl p-8 shadow-xl border border-border/50"
+            >
+              <h2 className="text-2xl font-display font-bold mb-4 flex items-center">
+                <Info className="w-6 h-6 text-purple-600 mr-3" />
+                Om dette webcam
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {spot.description}
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Full fishing spot view
   const waterTemp = spot.currentWaterTemp;
   const airTemp = spot.currentAirTemp;
   const windSpeed = spot.windSpeed;
@@ -270,7 +335,7 @@ export default function SpotDetail() {
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
       <Header />
-      
+
       {/* Detail Hero */}
       <div className="relative h-[60vh] min-h-[400px] bg-primary/10 overflow-hidden">
         {spot.imageUrl ? (
@@ -285,7 +350,7 @@ export default function SpotDetail() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        
+
         <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 z-20">
           <Link href="/" className="inline-flex items-center text-white/80 hover:text-white transition-colors bg-black/20 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
             <ArrowLeft className="w-4 h-4 mr-2" /> Tilbage

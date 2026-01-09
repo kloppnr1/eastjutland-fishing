@@ -83,9 +83,11 @@ export class FileStorage implements IStorage {
       latitude: spot.latitude,
       longitude: spot.longitude,
       description: spot.description ?? null,
+      spotType: (spot as any).spotType ?? "fishing",
       bestFor: spot.bestFor ?? null,
       imageUrl: spot.imageUrl ?? null,
       webcamUrl: (spot as any).webcamUrl ?? null,
+      timelapseUrl: (spot as any).timelapseUrl ?? null,
       currentWaterTemp: null,
       currentAirTemp: null,
       windSpeed: null,
@@ -107,9 +109,11 @@ export class FileStorage implements IStorage {
     if (updates.latitude !== undefined) spot.latitude = updates.latitude;
     if (updates.longitude !== undefined) spot.longitude = updates.longitude;
     if (updates.description !== undefined) spot.description = updates.description;
+    if ((updates as any).spotType !== undefined) spot.spotType = (updates as any).spotType;
     if (updates.bestFor !== undefined) spot.bestFor = updates.bestFor;
     if (updates.imageUrl !== undefined) spot.imageUrl = updates.imageUrl;
     if ((updates as any).webcamUrl !== undefined) spot.webcamUrl = (updates as any).webcamUrl;
+    if ((updates as any).timelapseUrl !== undefined) spot.timelapseUrl = (updates as any).timelapseUrl;
 
     this.save();
     return spot;

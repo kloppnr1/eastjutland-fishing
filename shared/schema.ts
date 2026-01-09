@@ -8,6 +8,7 @@ export const fishingSpots = pgTable("fishing_spots", {
   latitude: numeric("latitude").notNull(),
   longitude: numeric("longitude").notNull(),
   description: text("description"),
+  spotType: text("spot_type").default("fishing"), // "fishing" or "webcam"
   bestFor: text("best_for"), // Comma separated species
   currentWaterTemp: real("current_water_temp"),
   currentAirTemp: real("current_air_temp"),

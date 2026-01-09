@@ -185,6 +185,7 @@
       "latitude": "56.2383",
       "longitude": "10.3383",
       "description": "Webcam fra Kaløvig Bådelaug med udsigt mod nordøst.",
+      "spotType": "webcam",
       "bestFor": "",
       "imageUrl": null,
       "webcamUrl": "https://images.weserv.nl/?url=www.kblvejr.dk/vejrbilleder/nordost.jpg",

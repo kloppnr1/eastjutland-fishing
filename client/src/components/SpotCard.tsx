@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Thermometer, Fish, MapPin, ArrowRight, Clock, Wind, Navigation } from "lucide-react";
+import { Thermometer, Fish, MapPin, ArrowRight, Clock, Wind, Navigation, Video } from "lucide-react";
 import { motion } from "framer-motion";
 import type { FishingSpot } from "@shared/schema";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ const getWindDirectionText = (degrees: number) => {
 export function SpotCard({ spot, index }: SpotCardProps) {
   const temp = spot.currentWaterTemp;
   const [imageError, setImageError] = useState(false);
+  const isWebcam = spot.spotType === "webcam";
 
   // Temperature color logic
   const getTempColor = (t: number | null) => {
@@ -49,6 +50,70 @@ export function SpotCard({ spot, index }: SpotCardProps) {
     return "text-orange-500";
   };
 
+  // Webcam card style
+  if (isWebcam) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: index * 0.1 }}
+        className="group h-full"
+      >
+        <Link href={`/spot/${spot.id}`} className="block h-full outline-none">
+          <div className="h-full bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl overflow-hidden shadow-lg border border-purple-200 hover:shadow-2xl hover:border-purple-400 transition-all duration-300 group-hover:-translate-y-1 flex flex-col">
+
+            {/* Webcam Preview */}
+            <div className="relative h-48 overflow-hidden bg-purple-100">
+              {spot.webcamUrl ? (
+                <img
+                  src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                  alt={spot.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-purple-200 to-violet-100 flex items-center justify-center">
+                  <Video className="w-12 h-12 text-purple-300" />
+                </div>
+              )}
+
+              {/* Webcam Badge */}
+              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full shadow-lg bg-purple-600 text-white flex items-center gap-2 text-sm font-semibold">
+                <Video className="w-4 h-4" />
+                Live Webcam
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="p-6 flex flex-col flex-grow">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-xl font-bold text-purple-800 group-hover:text-purple-600 transition-colors">
+                  {spot.name}
+                </h3>
+              </div>
+
+              <div className="flex items-center text-purple-600/70 text-sm mb-4">
+                <MapPin className="w-4 h-4 mr-1 text-purple-500" />
+                <span>{Number(spot.latitude).toFixed(4)}, {Number(spot.longitude).toFixed(4)}</span>
+              </div>
+
+              {spot.description && (
+                <p className="text-purple-700/60 line-clamp-2 text-sm mb-6 flex-grow">
+                  {spot.description}
+                </p>
+              )}
+
+              <div className="mt-4 flex items-center text-purple-600 text-sm font-semibold group-hover:translate-x-1 transition-transform">
+                Se webcam <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
+
+  // Regular fishing spot card
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -58,7 +123,7 @@ export function SpotCard({ spot, index }: SpotCardProps) {
     >
       <Link href={`/spot/${spot.id}`} className="block h-full outline-none">
         <div className="h-full bg-card rounded-2xl overflow-hidden shadow-lg border border-border/50 hover:shadow-2xl hover:border-accent/30 transition-all duration-300 group-hover:-translate-y-1 flex flex-col">
-          
+
           {/* Image Area */}
           <div className="relative h-48 overflow-hidden bg-muted">
             {spot.imageUrl && !imageError ? (
@@ -73,7 +138,7 @@ export function SpotCard({ spot, index }: SpotCardProps) {
                 <Fish className="w-12 h-12 text-blue-200" />
               </div>
             )}
-            
+
             {/* Weather Badge - Floating */}
             <div className="absolute top-4 right-4 px-3 py-2 rounded-xl shadow-lg backdrop-blur-md border border-white/50 bg-white/90 flex flex-col items-end gap-0.5">
               <div className={cn("flex items-center gap-1.5 font-bold font-display text-sm", getTempColor(temp))}>
