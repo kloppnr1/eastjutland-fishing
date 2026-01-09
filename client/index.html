@@ -17,7 +17,9 @@
         var redirect = sessionStorage.getItem('redirect');
         if (redirect) {
           sessionStorage.removeItem('redirect');
-          window.history.replaceState(null, '', redirect);
+          // Add base path for GitHub Pages
+          var base = window.location.hostname.includes('github.io') ? '/eastjutland-fishing' : '';
+          window.history.replaceState(null, '', base + redirect);
         }
       })();
     </script>
