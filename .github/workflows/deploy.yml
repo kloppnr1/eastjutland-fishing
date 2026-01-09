@@ -35,16 +35,15 @@ jobs:
 
       - name: Build static site
         env:
-          GITHUB_PAGES: true
           VITE_STATIC_MODE: true
         run: npx vite build --outDir dist-static
 
       - name: Copy public files
         run: |
-          cp client/public/.nojekyll dist-static/
-          cp client/public/404.html dist-static/
+          cp client/public/.nojekyll client/dist-static/
+          cp client/public/404.html client/dist-static/
           if [ -d "uploads" ]; then
-            cp -r uploads dist-static/uploads
+            cp -r uploads client/dist-static/uploads
           fi
 
       - name: Setup Pages
@@ -53,7 +52,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist-static
+          path: client/dist-static
 
   deploy:
     environment:
