@@ -1,10 +1,11 @@
 import { useSpots } from "@/hooks/use-spots";
 import { Header } from "@/components/Header";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
-import { divIcon } from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
+import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
-import { Loader2, Thermometer, MapPin, Plus, Settings, Waves, Wind, Navigation } from "lucide-react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2, Waves, Navigation } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useSearch } from "wouter";
 import { AddSpotModal } from "@/components/AddSpotModal";
 import "leaflet/dist/leaflet.css";
 
@@ -104,11 +105,9 @@ const createWeatherBadgeIcon = (
 
 // Component to handle map click events
 function MapClickHandler({
-  onMapClick,
-  isAdminMode
+  onMapClick
 }: {
   onMapClick: (lat: number, lng: number) => void;
-  isAdminMode: boolean;
 }) {
   const map = useMapEvents({
     click: (e) => {
@@ -116,6 +115,17 @@ function MapClickHandler({
       onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+// Component to fly to a specific location
+function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.flyTo([lat, lng], 14, { duration: 1.5 });
+  }, [map, lat, lng]);
+
   return null;
 }
 
@@ -192,10 +202,12 @@ function generateSparklinePaths(
 // Weather badge component that appears on map click
 function TempBadge({
   coordinates,
-  onClose
+  onClose,
+  onAddSpot
 }: {
   coordinates: { lat: number; lng: number } | null;
   onClose: () => void;
+  onAddSpot: () => void;
 }) {
   const [waterTemp, setWaterTemp] = useState<number | null>(null);
   const [airTemp, setAirTemp] = useState<number | null>(null);
@@ -388,6 +400,22 @@ function TempBadge({
               <span style="font-size: 12px; font-weight: 700; color: #f97316;">${endTemp !== null ? endTemp.toFixed(1) + '°' : ''}</span>
             </div>
           </div>
+          <!-- Add spot button -->
+          <div style="display: flex; justify-content: flex-start; margin-top: 4px;">
+            <div class="add-spot-btn" style="
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              color: #3b82f6;
+              padding: 4px 0;
+              font-size: 11px;
+              font-weight: 500;
+              cursor: pointer;
+            ">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Gem sted
+            </div>
+          </div>
         </div>
         <div style="width: 2px; height: 20px; background: #3b82f6;"></div>
         <div style="
@@ -399,20 +427,45 @@ function TempBadge({
         "></div>
       </div>
     `,
-    iconSize: [280, 190],
-    iconAnchor: [140, 190],
+    iconSize: [280, 210],
+    iconAnchor: [140, 210],
+  });
+
+  // Invisible button marker positioned over the "Add spot" button (left-aligned)
+  const addButtonIcon = divIcon({
+    className: "add-spot-button-marker",
+    html: `<div style="width: 90px; height: 30px; cursor: pointer;"></div>`,
+    iconSize: [90, 30],
+    iconAnchor: [110, 55], // Position over the left-aligned button
   });
 
   return (
-    <Marker
-      ref={markerRef}
-      position={[coordinates.lat, coordinates.lng]}
-      icon={clickedLocationIcon}
-      zIndexOffset={1000}
-      eventHandlers={{
-        click: onClose,
-      }}
-    />
+    <>
+      <Marker
+        ref={markerRef}
+        position={[coordinates.lat, coordinates.lng]}
+        icon={clickedLocationIcon}
+        zIndexOffset={1000}
+        eventHandlers={{
+          click: (e) => {
+            DomEvent.stopPropagation(e.originalEvent);
+            onClose();
+          },
+        }}
+      />
+      {/* Invisible marker over the add button to capture clicks */}
+      <Marker
+        position={[coordinates.lat, coordinates.lng]}
+        icon={addButtonIcon}
+        zIndexOffset={1001}
+        eventHandlers={{
+          click: (e) => {
+            DomEvent.stopPropagation(e.originalEvent);
+            onAddSpot();
+          },
+        }}
+      />
+    </>
   );
 }
 
@@ -540,21 +593,32 @@ function SpotSparkline({ lat, lng }: { lat: string; lng: string }) {
 export default function MapView() {
   const { data: spots, isLoading, error } = useSpots();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const searchString = useSearch();
 
-  // Center on Østjylland area
-  const center: [number, number] = [56.25, 10.5];
+  // Parse URL params for target location
+  const targetLocation = useMemo(() => {
+    const params = new URLSearchParams(searchString);
+    const lat = parseFloat(params.get("lat") || "");
+    const lng = parseFloat(params.get("lng") || "");
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return { lat, lng };
+    }
+    return null;
+  }, [searchString]);
+
+  // Center on Østjylland area (or target location if provided)
+  const center: [number, number] = targetLocation
+    ? [targetLocation.lat, targetLocation.lng]
+    : [56.25, 10.5];
+  const initialZoom = targetLocation ? 14 : 10;
 
   const handleMapClick = (lat: number, lng: number) => {
-    if (isAdminMode) {
-      setClickedCoords({ lat, lng });
-      setIsAddModalOpen(true);
-      setTempBadgeCoords(null);
-    } else {
-      setTempBadgeCoords({ lat, lng });
-    }
+    setTempBadgeCoords({ lat, lng });
+  };
+
+  const handleAddSpot = () => {
+    setIsAddModalOpen(true);
   };
 
   return (
@@ -579,7 +643,7 @@ export default function MapView() {
         ) : (
           <MapContainer
             center={center}
-            zoom={10}
+            zoom={initialZoom}
             style={{ height: "100%", width: "100%" }}
             className="z-0 absolute inset-0"
           >
@@ -587,7 +651,10 @@ export default function MapView() {
               attribution='&copy; Esri'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             />
-            <MapClickHandler onMapClick={handleMapClick} isAdminMode={isAdminMode} />
+            <MapClickHandler onMapClick={handleMapClick} />
+            {targetLocation && (
+              <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
+            )}
 
             {/* Existing spots */}
             {spots?.map((spot) => (
@@ -651,64 +718,36 @@ export default function MapView() {
               </Marker>
             ))}
 
-            {/* Temperature badge for clicked location (non-admin mode) */}
-            {tempBadgeCoords && !isAdminMode && (
+            {/* Temperature badge for clicked location */}
+            {tempBadgeCoords && (
               <TempBadge
                 coordinates={tempBadgeCoords}
                 onClose={() => setTempBadgeCoords(null)}
+                onAddSpot={handleAddSpot}
               />
             )}
           </MapContainer>
         )}
 
-        {/* Spot count and Admin toggle */}
-        <div className="absolute top-6 right-6 flex flex-col gap-2 z-[1000]">
+        {/* Spot count */}
+        <div className="absolute top-6 right-6 z-[1000]">
           <div className="bg-white rounded-xl shadow-lg px-4 py-2">
             <span className="font-bold text-primary">{spots?.length || 0}</span>
             <span className="text-muted-foreground ml-1">fiskesteder</span>
           </div>
-
-          {/* Admin toggle */}
-          <button
-            onClick={() => {
-              setIsAdminMode(!isAdminMode);
-              setTempBadgeCoords(null);
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg transition-colors ${
-              isAdminMode
-                ? "bg-primary text-primary-foreground"
-                : "bg-white text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span className="text-sm font-medium">Admin</span>
-          </button>
         </div>
 
-        {/* Bottom hint - changes based on mode */}
-        <div className={`absolute bottom-6 right-6 rounded-xl shadow-lg px-4 py-3 z-[1000] flex items-center gap-2 ${
-          isAdminMode
-            ? "bg-primary text-primary-foreground"
-            : "bg-white text-foreground"
-        }`}>
-          {isAdminMode ? (
-            <>
-              <Plus className="w-5 h-5" />
-              <span className="text-sm font-medium">Klik for at tilføje sted</span>
-            </>
-          ) : (
-            <>
-              <Waves className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium">Klik for at se temperatur</span>
-            </>
-          )}
+        {/* Bottom hint */}
+        <div className="absolute bottom-6 right-6 rounded-xl shadow-lg px-4 py-3 z-[1000] flex items-center gap-2 bg-white text-foreground">
+          <Waves className="w-5 h-5 text-primary" />
+          <span className="text-sm font-medium">Klik for at se temperatur</span>
         </div>
       </div>
 
       <AddSpotModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        coordinates={clickedCoords}
+        coordinates={tempBadgeCoords}
       />
     </div>
   );
