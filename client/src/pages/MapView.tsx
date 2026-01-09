@@ -5,6 +5,25 @@ import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
 import { Loader2, Navigation, Video } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+
+// Auto-refreshing webcam image component
+function AutoRefreshImage({ src, alt, className, interval = 5000 }: { src: string; alt: string; className?: string; interval?: number }) {
+  const [key, setKey] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setKey(Date.now()), interval);
+    return () => clearInterval(timer);
+  }, [interval]);
+
+  return (
+    <img
+      key={key}
+      src={`${src}${src.includes('?') ? '&' : '?'}t=${key}`}
+      alt={alt}
+      className={className}
+    />
+  );
+}
 import { useSearch } from "wouter";
 import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
@@ -726,10 +745,11 @@ export default function MapView() {
                         {spot.webcamUrl && (
                           <div className="rounded-lg overflow-hidden aspect-video">
                             {/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
-                              <img
-                                src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                              <AutoRefreshImage
+                                src={spot.webcamUrl}
                                 alt={`Webcam: ${spot.name}`}
                                 className="w-full h-full object-cover"
+                                interval={5000}
                               />
                             ) : (
                               <iframe
