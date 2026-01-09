@@ -35,12 +35,12 @@ const createWeatherBadge = (
   windDir: number | null
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-  const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
+  const waterText = waterTemp != null ? waterTemp.toFixed(0) : "--";
 
   // SVG arrow for wind direction
   const arrowRotation = windDir != null ? windDir + 180 : 0;
   const windArrow = windDir != null
-    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+    ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
         <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
        </svg>`
     : '';
@@ -51,33 +51,33 @@ const createWeatherBadge = (
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="
           background: white;
-          padding: 4px 8px;
-          border-radius: 16px;
-          font-size: 11px;
+          padding: 3px 6px;
+          border-radius: 12px;
+          font-size: 10px;
           font-weight: 700;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-          border: 2px solid ${waterColor};
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          border: 1.5px solid ${waterColor};
           white-space: nowrap;
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
         ">
           <span style="color: ${waterColor};">${waterText}°</span>
           ${windArrow}
         </div>
-        <div style="width: 2px; height: 8px; background: ${waterColor};"></div>
+        <div style="width: 1.5px; height: 6px; background: ${waterColor};"></div>
         <div style="
-          width: 6px;
-          height: 6px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: ${waterColor};
-          box-shadow: 0 0 0 2px white;
+          box-shadow: 0 0 0 1.5px white;
         "></div>
       </div>
     `,
-    iconSize: [60, 42],
-    iconAnchor: [30, 42],
-    popupAnchor: [0, -42],
+    iconSize: [50, 36],
+    iconAnchor: [25, 36],
+    popupAnchor: [0, -36],
   });
 };
 
