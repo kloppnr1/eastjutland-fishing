@@ -40,7 +40,7 @@ const createWeatherBadge = (
   // SVG arrow for wind direction (chevron only)
   const arrowRotation = windDir != null ? windDir + 180 : 0;
   const windArrow = windDir != null
-    ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
         <path d="M18 15L12 9L6 15"/>
        </svg>`
     : '';
