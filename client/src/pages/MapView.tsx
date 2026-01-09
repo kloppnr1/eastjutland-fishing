@@ -45,8 +45,35 @@ const createWeatherBadge = (
     html: `
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="position: relative; width: 46px; height: 46px;">
-          <!-- Compass circle -->
+          <!-- Wind direction pointer (behind circle) -->
+          ${windDir != null ? `
           <div style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 46px;
+            height: 46px;
+            transform: rotate(${arrowRotation}deg);
+            z-index: 1;
+          ">
+            <div style="
+              position: absolute;
+              top: -6px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 8px solid transparent;
+              border-right: 8px solid transparent;
+              border-bottom: 14px solid ${waterColor};
+              filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            "></div>
+          </div>
+          ` : ''}
+          <!-- Compass circle (on top) -->
+          <div style="
+            position: relative;
+            z-index: 2;
             width: 46px;
             height: 46px;
             background: white;
@@ -62,30 +89,6 @@ const createWeatherBadge = (
             <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
             <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
           </div>
-          <!-- Wind direction pointer -->
-          ${windDir != null ? `
-          <div style="
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 46px;
-            height: 46px;
-            transform: rotate(${arrowRotation}deg);
-          ">
-            <div style="
-              position: absolute;
-              top: -8px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 0;
-              height: 0;
-              border-left: 7px solid transparent;
-              border-right: 7px solid transparent;
-              border-bottom: 12px solid ${waterColor};
-              filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-            "></div>
-          </div>
-          ` : ''}
         </div>
       </div>
     `,
