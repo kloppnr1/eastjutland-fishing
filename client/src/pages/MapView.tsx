@@ -29,55 +29,61 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
-// Compact weather badge - used for known fishing spots
+// Compass-style round badge - shows water temp with wind direction pointer
 const createWeatherBadge = (
   waterTemp: number | null,
   windDir: number | null
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(0) : "--";
-
-  // SVG arrow for wind direction (chevron only)
   const arrowRotation = windDir != null ? windDir + 180 : 0;
-  const windArrow = windDir != null
-    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
-        <path d="M18 15L12 9L6 15"/>
-       </svg>`
-    : '';
 
   return divIcon({
     className: "weather-badge-marker",
     html: `
       <div style="display: flex; flex-direction: column; align-items: center;">
-        <div style="
-          background: white;
-          padding: 3px 6px;
-          border-radius: 12px;
-          font-size: 10px;
-          font-weight: 700;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-          border: 1.5px solid ${waterColor};
-          white-space: nowrap;
-          display: flex;
-          align-items: center;
-          gap: 3px;
-        ">
-          <span style="color: ${waterColor};">${waterText}°</span>
-          ${windArrow}
+        <div style="position: relative; width: 32px; height: 32px;">
+          <!-- Compass circle -->
+          <div style="
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            border: 2px solid ${waterColor};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: ${waterColor};
+          ">
+            ${waterText}°
+          </div>
+          <!-- Wind direction pointer -->
+          ${windDir != null ? `
+          <div style="
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%) rotate(${arrowRotation}deg);
+            transform-origin: center 20px;
+          ">
+            <div style="
+              width: 0;
+              height: 0;
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-bottom: 8px solid ${waterColor};
+            "></div>
+          </div>
+          ` : ''}
         </div>
-        <div style="width: 1.5px; height: 6px; background: ${waterColor};"></div>
-        <div style="
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: ${waterColor};
-          box-shadow: 0 0 0 1.5px white;
-        "></div>
       </div>
     `,
-    iconSize: [50, 36],
-    iconAnchor: [25, 36],
-    popupAnchor: [0, -36],
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18],
   });
 };
 
