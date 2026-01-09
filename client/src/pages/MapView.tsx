@@ -724,12 +724,22 @@ export default function MapView() {
                           </h3>
                         </Link>
                         {spot.webcamUrl && (
-                          <div className="rounded-lg overflow-hidden">
-                            <img
-                              src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
-                              alt={`Webcam: ${spot.name}`}
-                              className="w-full h-auto"
-                            />
+                          <div className="rounded-lg overflow-hidden aspect-video">
+                            {/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
+                              <img
+                                src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                                alt={`Webcam: ${spot.name}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <iframe
+                                src={spot.webcamUrl}
+                                className="w-full h-full"
+                                frameBorder="0"
+                                allowFullScreen
+                                title={`Webcam: ${spot.name}`}
+                              />
+                            )}
                           </div>
                         )}
                         {spot.description && (
