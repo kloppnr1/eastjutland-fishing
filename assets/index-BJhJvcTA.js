@@ -96,14 +96,15 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           ">
             <div style="
               position: absolute;
-              top: -6px;
+              top: -8px;
               left: 50%;
               transform: translateX(-50%);
               width: 0;
               height: 0;
-              border-left: 5px solid transparent;
-              border-right: 5px solid transparent;
-              border-bottom: 8px solid ${r};
+              border-left: 7px solid transparent;
+              border-right: 7px solid transparent;
+              border-bottom: 12px solid ${r};
+              filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
             "></div>
           </div>
           `:""}
