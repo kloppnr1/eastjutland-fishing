@@ -237,7 +237,7 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "description": "Webcam fra Kaløvig Bådelaug med udsigt mod nordøst.",
     "bestFor": "",
     "imageUrl": null,
-    "webcamUrl": "http://www.kblvejr.dk/vejrbilleder/nordost.jpg",
+    "webcamUrl": "https://images.weserv.nl/?url=www.kblvejr.dk/vejrbilleder/nordost.jpg",
     "currentWaterTemp": null,
     "currentAirTemp": null,
     "windSpeed": null,
