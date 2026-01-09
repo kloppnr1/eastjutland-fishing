@@ -40,7 +40,7 @@ const createWeatherBadge = (
   // SVG arrow for wind direction
   const arrowRotation = windDir != null ? windDir + 180 : 0;
   const windArrow = windDir != null
-    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
         <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
        </svg>`
     : '';
@@ -51,33 +51,33 @@ const createWeatherBadge = (
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="
           background: white;
-          padding: 6px 10px;
-          border-radius: 20px;
-          font-size: 14px;
+          padding: 4px 8px;
+          border-radius: 16px;
+          font-size: 11px;
           font-weight: 700;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
           border: 2px solid ${waterColor};
           white-space: nowrap;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
         ">
           <span style="color: ${waterColor};">${waterText}°</span>
           ${windArrow}
         </div>
-        <div style="width: 2px; height: 12px; background: ${waterColor};"></div>
+        <div style="width: 2px; height: 8px; background: ${waterColor};"></div>
         <div style="
-          width: 8px;
-          height: 8px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
           background: ${waterColor};
           box-shadow: 0 0 0 2px white;
         "></div>
       </div>
     `,
-    iconSize: [80, 55],
-    iconAnchor: [40, 55],
-    popupAnchor: [0, -55],
+    iconSize: [60, 42],
+    iconAnchor: [30, 42],
+    popupAnchor: [0, -42],
   });
 };
 
