@@ -52,6 +52,9 @@ export function SpotCard({ spot, index }: SpotCardProps) {
 
   // Webcam card style
   if (isWebcam) {
+    // Check if webcam URL is an image or iframe
+    const isImageWebcam = spot.webcamUrl && /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl);
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -64,9 +67,9 @@ export function SpotCard({ spot, index }: SpotCardProps) {
 
             {/* Webcam Preview */}
             <div className="relative h-48 overflow-hidden bg-purple-100">
-              {spot.webcamUrl ? (
+              {isImageWebcam && !imageError ? (
                 <img
-                  src={`${spot.webcamUrl}${spot.webcamUrl.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                  src={`${spot.webcamUrl}${spot.webcamUrl!.includes('?') ? '&' : '?'}t=${Date.now()}`}
                   alt={spot.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   onError={() => setImageError(true)}
