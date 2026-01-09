@@ -42,7 +42,7 @@ jobs:
       - name: Copy uploads folder
         run: |
           if [ -d "uploads" ]; then
-            cp -r uploads dist-static/uploads
+            cp -r uploads client/dist-static/uploads
           fi
 
       - name: Setup Pages
@@ -51,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist-static
+          path: client/dist-static
 
   deploy:
     environment:
