@@ -5,9 +5,13 @@
     <title>Redirecting...</title>
     <script>
       // Single Page App redirect for GitHub Pages
-      // Redirects all 404s to index.html with the path preserved
-      sessionStorage.setItem('redirect', window.location.pathname + window.location.search);
-      window.location.replace('/');
+      var path = window.location.pathname;
+      var base = '/eastjutland-fishing';
+      if (path.startsWith(base)) {
+        var route = path.slice(base.length) || '/';
+        sessionStorage.setItem('redirect', route + window.location.search);
+      }
+      window.location.replace(base + '/');
     </script>
   </head>
   <body>
