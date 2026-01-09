@@ -745,9 +745,6 @@ export default function MapView() {
                         {spot.description && (
                           <p className="text-xs text-gray-500 mt-2 text-center">{spot.description}</p>
                         )}
-                        <Link href={`/spot/${spot.id}`} className="block mt-2 text-center text-xs text-purple-600 hover:text-purple-800">
-                          Se detaljer →
-                        </Link>
                       </div>
                     ) : (
                       /* Fishing spot popup - full view */
