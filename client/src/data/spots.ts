@@ -253,7 +253,7 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "bestFor": "",
     "imageUrl": null,
     "webcamUrl": "https://images.weserv.nl/?url=www.kblvejr.dk/vejrbilleder/nordost.jpg",
-    "timelapseUrl": "https://corsproxy.io/?url=http://kblvejr.dk/vejrbilleder/Intraday_nordost_video.mp4",
+    "timelapseUrl": "http://kblvejr.dk/vejrbilleder/Intraday_nordost_video.mp4",
     "currentWaterTemp": null,
     "currentAirTemp": null,
     "windSpeed": null,

@@ -10,12 +10,11 @@ import { useState, useEffect, useCallback } from "react";
 import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
 
-// Webcam component that handles both iframe and image webcams, with optional timelapse
+// Webcam component that handles both iframe and image webcams, with optional timelapse link
 function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: string; timelapseUrl?: string | null; spotName: string }) {
   const isImageWebcam = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(webcamUrl);
   const [imageKey, setImageKey] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showTimelapse, setShowTimelapse] = useState(false);
 
   const refreshImage = useCallback(() => {
     setIsRefreshing(true);
@@ -25,10 +24,10 @@ function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: strin
 
   // Auto-refresh image webcams every 30 seconds
   useEffect(() => {
-    if (!isImageWebcam || showTimelapse) return;
+    if (!isImageWebcam) return;
     const interval = setInterval(refreshImage, 30000);
     return () => clearInterval(interval);
-  }, [isImageWebcam, showTimelapse, refreshImage]);
+  }, [isImageWebcam, refreshImage]);
 
   return (
     <motion.div
@@ -40,18 +39,20 @@ function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: strin
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-display font-bold flex items-center">
           <Video className="w-6 h-6 text-primary mr-3" />
-          {showTimelapse ? "Timelapse" : "Live webcam"}
+          Live webcam
         </h2>
         <div className="flex items-center gap-2">
           {timelapseUrl && (
-            <button
-              onClick={() => setShowTimelapse(!showTimelapse)}
+            <a
+              href={timelapseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-colors"
             >
-              {showTimelapse ? "Vis live" : "Vis timelapse"}
-            </button>
+              Se timelapse
+            </a>
           )}
-          {isImageWebcam && !showTimelapse && (
+          {isImageWebcam && (
             <button
               onClick={refreshImage}
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -63,16 +64,7 @@ function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: strin
         </div>
       </div>
       <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-        {showTimelapse && timelapseUrl ? (
-          <video
-            src={timelapseUrl}
-            controls
-            autoPlay
-            loop
-            muted
-            className="w-full h-full object-cover"
-          />
-        ) : isImageWebcam ? (
+        {isImageWebcam ? (
           <img
             key={imageKey}
             src={`${webcamUrl}${webcamUrl.includes('?') ? '&' : '?'}t=${imageKey}`}
@@ -89,7 +81,7 @@ function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: strin
           />
         )}
       </div>
-      {isImageWebcam && !showTimelapse && (
+      {isImageWebcam && (
         <p className="text-xs text-muted-foreground mt-2 text-center">
           Opdateres automatisk hvert 30. sekund
         </p>
