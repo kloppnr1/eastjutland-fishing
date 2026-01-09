@@ -216,7 +216,19 @@
       "imageUrl": null,
       "webcamUrl": "https://g0.ipcamlive.com/player/player.php?alias=5e009c2e9e94b&autoplay=0",
       "lastUpdated": null
+    },
+    {
+      "id": 32,
+      "name": "Hirtshals Fyrtårn (Webcam)",
+      "latitude": "57.5876",
+      "longitude": "9.9667",
+      "description": "Live webcam fra Hirtshals Fyrtårn med udsigt over Skagerrak.",
+      "spotType": "webcam",
+      "bestFor": "",
+      "imageUrl": null,
+      "webcamUrl": "https://hirtshals-fyrtaarn.dk/webcam/webcamimage.jpg",
+      "lastUpdated": null
     }
   ],
-  "nextId": 32
+  "nextId": 33
 }

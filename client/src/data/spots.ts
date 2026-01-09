@@ -309,5 +309,22 @@ export const BUNDLED_SPOTS: FishingSpot[] = [
     "windSpeed": null,
     "windDirection": null,
     "lastUpdated": null
+  },
+  {
+    "id": 32,
+    "name": "Hirtshals Fyrtårn (Webcam)",
+    "latitude": "57.5876",
+    "longitude": "9.9667",
+    "description": "Live webcam fra Hirtshals Fyrtårn med udsigt over Skagerrak.",
+    "spotType": "webcam",
+    "bestFor": "",
+    "imageUrl": null,
+    "webcamUrl": "https://hirtshals-fyrtaarn.dk/webcam/webcamimage.jpg",
+    "timelapseUrl": null,
+    "currentWaterTemp": null,
+    "currentAirTemp": null,
+    "windSpeed": null,
+    "windDirection": null,
+    "lastUpdated": null
   }
 ];
