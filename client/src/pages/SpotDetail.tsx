@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
 
-// Webcam component that handles both iframe and image webcams, with optional timelapse link
+// Webcam component that handles both iframe and image webcams, with optional timelapse video
 function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: string; timelapseUrl?: string | null; spotName: string }) {
   const isImageWebcam = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(webcamUrl);
   const [imageKey, setImageKey] = useState(Date.now());
@@ -86,6 +86,7 @@ function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: strin
           Opdateres automatisk hvert 30. sekund
         </p>
       )}
+
     </motion.div>
   );
 }
