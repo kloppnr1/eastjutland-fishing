@@ -288,7 +288,7 @@ export async function registerRoutes(
 
   app.post(api.spots.create.path, async (req, res) => {
     try {
-      const { name, latitude, longitude, description, bestFor, imageUrl } = req.body;
+      const { name, latitude, longitude, description, bestFor, imageUrl, webcamUrl } = req.body;
       if (!name || !latitude || !longitude) {
         return res.status(400).json({ message: "Missing required fields" });
       }
@@ -299,7 +299,8 @@ export async function registerRoutes(
         description,
         bestFor,
         imageUrl: imageUrl || null,
-      });
+        webcamUrl: webcamUrl || null,
+      } as any);
 
       // Fetch fresh weather for the new spot
       const weather = await fetchWeather(latitude, longitude);
@@ -322,14 +323,15 @@ export async function registerRoutes(
   app.put("/api/spots/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { name, description, bestFor, imageUrl } = req.body;
+      const { name, description, bestFor, imageUrl, webcamUrl } = req.body;
 
       const spot = await storage.updateSpot(id, {
         name,
         description,
         bestFor,
         imageUrl,
-      });
+        webcamUrl,
+      } as any);
 
       res.json(spot);
     } catch (err) {

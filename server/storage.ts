@@ -85,6 +85,7 @@ export class FileStorage implements IStorage {
       description: spot.description ?? null,
       bestFor: spot.bestFor ?? null,
       imageUrl: spot.imageUrl ?? null,
+      webcamUrl: (spot as any).webcamUrl ?? null,
       currentWaterTemp: null,
       currentAirTemp: null,
       windSpeed: null,
@@ -108,6 +109,7 @@ export class FileStorage implements IStorage {
     if (updates.description !== undefined) spot.description = updates.description;
     if (updates.bestFor !== undefined) spot.bestFor = updates.bestFor;
     if (updates.imageUrl !== undefined) spot.imageUrl = updates.imageUrl;
+    if ((updates as any).webcamUrl !== undefined) spot.webcamUrl = (updates as any).webcamUrl;
 
     this.save();
     return spot;
