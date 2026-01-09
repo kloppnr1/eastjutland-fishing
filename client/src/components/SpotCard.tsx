@@ -3,6 +3,7 @@ import { Thermometer, Fish, MapPin, ArrowRight, Clock, Wind, Navigation } from "
 import { motion } from "framer-motion";
 import type { FishingSpot } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { resolveImageUrl } from "@/lib/image-url";
 import { useState } from "react";
 
 // Extract HH:mm in Danish timezone
@@ -62,7 +63,7 @@ export function SpotCard({ spot, index }: SpotCardProps) {
           <div className="relative h-48 overflow-hidden bg-muted">
             {spot.imageUrl && !imageError ? (
               <img
-                src={spot.imageUrl}
+                src={resolveImageUrl(spot.imageUrl) || undefined}
                 alt={spot.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 onError={() => setImageError(true)}

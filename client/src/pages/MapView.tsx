@@ -7,6 +7,7 @@ import { Loader2, Navigation } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearch } from "wouter";
 import { AddSpotModal } from "@/components/AddSpotModal";
+import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
 // Compact weather badge - used for both known spots and clicked locations
@@ -717,7 +718,7 @@ export default function MapView() {
                     {spot.imageUrl && (
                       <div className="h-32 mb-2 rounded-lg overflow-hidden">
                         <img
-                          src={spot.imageUrl}
+                          src={resolveImageUrl(spot.imageUrl) || undefined}
                           alt={spot.name}
                           className="w-full h-full object-cover"
                         />

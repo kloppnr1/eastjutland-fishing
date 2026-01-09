@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
 
 // Extract HH:mm in Danish timezone
@@ -192,8 +193,8 @@ export default function SpotDetail() {
       {/* Detail Hero */}
       <div className="relative h-[60vh] min-h-[400px] bg-primary/10 overflow-hidden">
         {spot.imageUrl ? (
-          <img 
-            src={spot.imageUrl} 
+          <img
+            src={resolveImageUrl(spot.imageUrl) || undefined}
             alt={spot.name}
             className="w-full h-full object-cover"
           />

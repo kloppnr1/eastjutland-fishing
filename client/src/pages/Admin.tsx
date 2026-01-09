@@ -6,6 +6,7 @@ import {
   Trash2, Edit2, Save, X, Upload, Loader2, MapPin, Fish
 } from "lucide-react";
 import type { FishingSpot } from "@shared/schema";
+import { resolveImageUrl } from "@/lib/image-url";
 
 interface EditingSpot {
   id: number;
@@ -146,7 +147,7 @@ export default function Admin() {
                         {editingSpot.imagePreview || editingSpot.imageUrl ? (
                           <div className="relative">
                             <img
-                              src={editingSpot.imagePreview || editingSpot.imageUrl || ""}
+                              src={editingSpot.imagePreview || resolveImageUrl(editingSpot.imageUrl) || ""}
                               alt="Preview"
                               className="w-full h-24 object-cover rounded-lg"
                             />
@@ -219,7 +220,7 @@ export default function Admin() {
                     <div className="w-40 h-24 shrink-0 rounded-lg overflow-hidden bg-muted">
                       {spot.imageUrl ? (
                         <img
-                          src={spot.imageUrl}
+                          src={resolveImageUrl(spot.imageUrl) || undefined}
                           alt={spot.name}
                           className="w-full h-full object-cover"
                         />
