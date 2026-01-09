@@ -96,7 +96,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           ">
             <div style="
               position: absolute;
-              top: -3px;
+              top: -6px;
               left: 50%;
               transform: translateX(-50%);
               width: 0;
