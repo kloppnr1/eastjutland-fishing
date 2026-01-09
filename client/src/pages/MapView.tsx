@@ -805,7 +805,9 @@ export default function MapView() {
                             <div className="text-lg font-bold text-gray-700 flex items-center justify-center gap-0.5">
                               {spot.windSpeed != null ? spot.windSpeed.toFixed(0) : "--"}
                               {spot.windDirection != null && (
-                                <Navigation className="w-3 h-3 text-gray-400" style={{ transform: `rotate(${spot.windDirection + 180}deg)` }} />
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${spot.windDirection + 180}deg)` }} className="text-gray-400">
+                                  <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+                                </svg>
                               )}
                             </div>
                             <div className="text-[9px] text-gray-500">m/s</div>
