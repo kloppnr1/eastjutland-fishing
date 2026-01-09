@@ -1,17 +1,23 @@
 import { useSpots } from "@/hooks/use-spots";
 import { Header } from "@/components/Header";
 import { SpotCard } from "@/components/SpotCard";
-import { Loader2, Waves, Search, AlertCircle } from "lucide-react";
+import { Loader2, Waves, Search, AlertCircle, Fish, Video } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+
+type FilterType = "all" | "fishing" | "webcam";
 
 export default function Home() {
   const { data: spots, isLoading, error } = useSpots();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
 
-  const filteredSpots = spots?.filter(spot =>
-    spot.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSpots = spots?.filter(spot => {
+    const matchesSearch = spot.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const spotType = spot.spotType || "fishing";
+    const matchesFilter = filter === "all" || spotType === filter;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -49,6 +55,42 @@ export default function Home() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
+
+            {/* Filter Buttons */}
+            <div className="flex justify-center gap-2 mt-6">
+              <button
+                onClick={() => setFilter("all")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  filter === "all"
+                    ? "bg-primary text-white shadow-lg"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+              >
+                Alle
+              </button>
+              <button
+                onClick={() => setFilter("fishing")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  filter === "fishing"
+                    ? "bg-blue-500 text-white shadow-lg"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+              >
+                <Fish className="w-4 h-4" />
+                Fiskesteder
+              </button>
+              <button
+                onClick={() => setFilter("webcam")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  filter === "webcam"
+                    ? "bg-purple-500 text-white shadow-lg"
+                    : "bg-white/80 text-muted-foreground hover:bg-white"
+                }`}
+              >
+                <Video className="w-4 h-4" />
+                Webcams
+              </button>
             </div>
           </motion.div>
         </div>
@@ -88,12 +130,15 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-lg text-muted-foreground">Ingen fiskesteder fundet for "{searchTerm}"</p>
+            <p className="text-lg text-muted-foreground">
+              Ingen {filter === "webcam" ? "webcams" : filter === "fishing" ? "fiskesteder" : "steder"} fundet
+              {searchTerm && ` for "${searchTerm}"`}
+            </p>
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => { setSearchTerm(""); setFilter("all"); }}
               className="mt-4 text-primary font-medium hover:underline underline-offset-4"
             >
-              Ryd søgning
+              Nulstil filtre
             </button>
           </div>
         )}
