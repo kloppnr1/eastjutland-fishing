@@ -66,17 +66,22 @@ const createWeatherBadge = (
           ${windDir != null ? `
           <div style="
             position: absolute;
-            top: -5px;
-            left: 50%;
-            transform: translateX(-50%) rotate(${arrowRotation}deg);
-            transform-origin: center 25px;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            transform: rotate(${arrowRotation}deg);
           ">
             <div style="
+              position: absolute;
+              top: -3px;
+              left: 50%;
+              transform: translateX(-50%);
               width: 0;
               height: 0;
-              border-left: 6px solid transparent;
-              border-right: 6px solid transparent;
-              border-bottom: 10px solid ${waterColor};
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-bottom: 8px solid ${waterColor};
             "></div>
           </div>
           ` : ''}
