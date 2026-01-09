@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +9,10 @@ import MapView from "@/pages/MapView";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
-function Router() {
+// Get base path from Vite config (e.g., "/eastjutland-fishing/" in production)
+const base = import.meta.env.BASE_URL.replace(/\/$/, "") || "";
+
+function Routes() {
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -26,7 +29,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <Router base={base}>
+          <Routes />
+        </Router>
       </TooltipProvider>
     </QueryClientProvider>
   );
