@@ -74,7 +74,7 @@ const createWeatherBadge = (
           ">
             <div style="
               position: absolute;
-              top: -3px;
+              top: -6px;
               left: 50%;
               transform: translateX(-50%);
               width: 0;
