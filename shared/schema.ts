@@ -15,6 +15,7 @@ export const fishingSpots = pgTable("fishing_spots", {
   windDirection: real("wind_direction"),
   lastUpdated: timestamp("last_updated"),
   imageUrl: text("image_url"),
+  webcamUrl: text("webcam_url"),
 });
 
 export const insertFishingSpotSchema = createInsertSchema(fishingSpots).omit({

@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { useRoute, Link } from "wouter";
 import {
   ArrowLeft, Thermometer, Clock,
-  Fish, Wind, Info, Navigation, TrendingUp, MapPin
+  Fish, Wind, Info, Navigation, TrendingUp, MapPin, Video
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -378,6 +378,30 @@ export default function SpotDetail() {
                 </div>
               )}
             </motion.div>
+
+            {/* Webcam Section */}
+            {spot.webcamUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-card rounded-3xl p-8 shadow-xl border border-border/50"
+              >
+                <h2 className="text-2xl font-display font-bold mb-6 flex items-center">
+                  <Video className="w-6 h-6 text-primary mr-3" />
+                  Live webcam
+                </h2>
+                <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+                  <iframe
+                    src={spot.webcamUrl}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allowFullScreen
+                    title={`Webcam ved ${spot.name}`}
+                  />
+                </div>
+              </motion.div>
+            )}
 
           </div>
 

@@ -38,16 +38,7 @@
       "description": "Sydspidsen af Helgenæs-halvøen. Klippekyst med adgang til dybt vand.",
       "bestFor": "Havørred, Torsk, Hornfisk",
       "imageUrl": null,
-      "lastUpdated": null
-    },
-    {
-      "id": 7,
-      "name": "Begtrup Vig",
-      "latitude": "56.1400",
-      "longitude": "10.4900",
-      "description": "Beskyttet vig på Helgenæs. God for begyndere med sandbund.",
-      "bestFor": "Fladfisk, Havørred",
-      "imageUrl": "/uploads/1767877999421-913850179.jpg",
+      "webcamUrl": "https://www.ipcamlive.com/player/player.php?alias=sletterhagefyr&autoplay=0",
       "lastUpdated": null
     },
     {
@@ -173,7 +164,21 @@
       "windSpeed": null,
       "windDirection": null,
       "lastUpdated": null
+    },
+    {
+      "id": 28,
+      "name": "Begtrup Vig",
+      "latitude": "56.179388",
+      "longitude": "10.465937",
+      "description": "",
+      "bestFor": "",
+      "imageUrl": "/uploads/1767940049333-715731517.jpg",
+      "currentWaterTemp": null,
+      "currentAirTemp": null,
+      "windSpeed": null,
+      "windDirection": null,
+      "lastUpdated": null
     }
   ],
-  "nextId": 28
+  "nextId": 29
 }
