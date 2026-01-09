@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  /* Coastal Theme - Djursland Palette */
+  /* Coastal Theme - Østjylland Palette */
   /* Primary: Deep Ocean Blue */
   --primary: 215 50% 23%;
   --primary-foreground: 210 40% 98%;
@@ -80,4 +80,45 @@
   background-position: 0 bottom;
   background-repeat: repeat-x;
   background-size: 100% auto;
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.leaflet-popup-content {
+  margin: 6px;
+  min-width: auto !important;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Compact popup for temp badge */
+.compact-popup .leaflet-popup-content-wrapper {
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.compact-popup .leaflet-popup-content {
+  margin: 4px 8px !important;
+  line-height: 1;
+}
+
+.compact-popup .leaflet-popup-tip-container {
+  display: none;
 }

@@ -18,6 +18,15 @@ export const api = {
         404: z.object({ message: z.string() }),
       },
     },
+    create: {
+      method: "POST" as const,
+      path: "/api/spots",
+      body: insertFishingSpotSchema,
+      responses: {
+        201: z.custom<typeof fishingSpots.$inferSelect>(),
+        400: z.object({ message: z.string() }),
+      },
+    },
   },
 };
 

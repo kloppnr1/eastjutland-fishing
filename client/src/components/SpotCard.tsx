@@ -1,30 +1,51 @@
 import { Link } from "wouter";
-import { Thermometer, Fish, MapPin, ArrowRight } from "lucide-react";
+import { Thermometer, Fish, MapPin, ArrowRight, Clock, Wind, Navigation } from "lucide-react";
 import { motion } from "framer-motion";
 import type { FishingSpot } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+
+// Extract HH:mm in Danish timezone
+const formatDanishTime = (input: string | Date | null): string => {
+  if (!input) return "--:--";
+
+  if (typeof input === "string") {
+    // API returns time in Danish timezone, extract directly
+    const match = input.match(/T(\d{2}):(\d{2})/);
+    return match ? `${match[1]}:${match[2]}` : "--:--";
+  }
+
+  // If Date object, convert to Danish timezone
+  return input.toLocaleTimeString('da-DK', {
+    timeZone: 'Europe/Copenhagen',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};
 
 interface SpotCardProps {
   spot: FishingSpot;
   index: number;
 }
 
+// Helper to convert wind direction degrees to compass direction
+const getWindDirectionText = (degrees: number) => {
+  const directions = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
+  const index = Math.round(degrees / 45) % 8;
+  return directions[index];
+};
+
 export function SpotCard({ spot, index }: SpotCardProps) {
   const temp = spot.currentWaterTemp;
-  
+  const [imageError, setImageError] = useState(false);
+
   // Temperature color logic
   const getTempColor = (t: number | null) => {
     if (t === null) return "text-gray-400";
     if (t < 5) return "text-blue-500";
     if (t < 12) return "text-teal-500";
     return "text-orange-500";
-  };
-
-  const getTempBg = (t: number | null) => {
-    if (t === null) return "bg-gray-100";
-    if (t < 5) return "bg-blue-50";
-    if (t < 12) return "bg-teal-50";
-    return "bg-orange-50";
   };
 
   return (
@@ -39,11 +60,12 @@ export function SpotCard({ spot, index }: SpotCardProps) {
           
           {/* Image Area */}
           <div className="relative h-48 overflow-hidden bg-muted">
-            {spot.imageUrl ? (
-              <img 
-                src={spot.imageUrl} 
+            {spot.imageUrl && !imageError ? (
+              <img
+                src={spot.imageUrl}
                 alt={spot.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-100 to-teal-50 flex items-center justify-center">
@@ -51,14 +73,34 @@ export function SpotCard({ spot, index }: SpotCardProps) {
               </div>
             )}
             
-            {/* Temperature Badge - Floating */}
-            <div className={cn(
-              "absolute top-4 right-4 px-4 py-2 rounded-xl shadow-lg backdrop-blur-md border border-white/50 flex items-center gap-2 font-bold font-display text-lg",
-              getTempBg(temp),
-              getTempColor(temp)
-            )}>
-              <Thermometer className="w-5 h-5" />
-              {temp !== null ? `${temp.toFixed(1)}°C` : "--"}
+            {/* Weather Badge - Floating */}
+            <div className="absolute top-4 right-4 px-3 py-2 rounded-xl shadow-lg backdrop-blur-md border border-white/50 bg-white/90 flex flex-col items-end gap-0.5">
+              <div className={cn("flex items-center gap-1.5 font-bold font-display text-sm", getTempColor(temp))}>
+                <Thermometer className="w-3.5 h-3.5" />
+                {temp != null ? `${temp.toFixed(1)}°` : "--"}
+                <span className="text-xs text-muted-foreground font-normal">vand</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-bold font-display text-sm text-orange-500">
+                <Thermometer className="w-3.5 h-3.5" />
+                {spot.currentAirTemp != null ? `${spot.currentAirTemp.toFixed(1)}°` : "--"}
+                <span className="text-xs text-muted-foreground font-normal">luft</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-bold font-display text-sm text-gray-600">
+                <Wind className="w-3.5 h-3.5" />
+                {spot.windSpeed != null ? `${spot.windSpeed.toFixed(0)} m/s` : "--"}
+                {spot.windDirection != null && (
+                  <Navigation
+                    className="w-3.5 h-3.5"
+                    style={{ transform: `rotate(${spot.windDirection + 180}deg)` }}
+                  />
+                )}
+              </div>
+              {spot.lastUpdated && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                  <Clock className="w-3 h-3" />
+                  {formatDanishTime(spot.lastUpdated)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -75,28 +117,14 @@ export function SpotCard({ spot, index }: SpotCardProps) {
               <span>{Number(spot.latitude).toFixed(4)}, {Number(spot.longitude).toFixed(4)}</span>
             </div>
 
-            <p className="text-muted-foreground line-clamp-2 text-sm mb-6 flex-grow">
-              {spot.description}
-            </p>
+            {spot.description && (
+              <p className="text-muted-foreground line-clamp-2 text-sm mb-6 flex-grow">
+                {spot.description}
+              </p>
+            )}
 
-            <div className="pt-4 border-t border-border/50 flex flex-wrap gap-2">
-              {spot.bestFor.split(',').slice(0, 3).map((fish, i) => (
-                <span 
-                  key={i} 
-                  className="px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-semibold uppercase tracking-wider"
-                >
-                  {fish.trim()}
-                </span>
-              ))}
-              {spot.bestFor.split(',').length > 3 && (
-                <span className="px-2.5 py-1 text-muted-foreground text-xs">
-                  +{spot.bestFor.split(',').length - 3} more
-                </span>
-              )}
-            </div>
-            
             <div className="mt-4 flex items-center text-accent text-sm font-semibold group-hover:translate-x-1 transition-transform">
-              View Details <ArrowRight className="w-4 h-4 ml-1" />
+              Se detaljer <ArrowRight className="w-4 h-4 ml-1" />
             </div>
           </div>
         </div>

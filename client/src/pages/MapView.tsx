@@ -1,0 +1,715 @@
+import { useSpots } from "@/hooks/use-spots";
+import { Header } from "@/components/Header";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { divIcon } from "leaflet";
+import { Link } from "wouter";
+import { Loader2, Thermometer, MapPin, Plus, Settings, Waves, Wind, Navigation } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { AddSpotModal } from "@/components/AddSpotModal";
+import "leaflet/dist/leaflet.css";
+
+// Compact weather badge - used for both known spots and clicked locations
+const createWeatherBadge = (
+  waterTemp: number | null,
+  airTemp: number | null,
+  windSpeed: number | null,
+  windDir: number | null,
+  loading: boolean = false,
+  name?: string
+) => {
+  const waterColor = loading ? "#6b7280" : waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
+
+  const waterText = loading ? "..." : (waterTemp != null ? waterTemp.toFixed(1) : "--");
+  const airText = loading ? "..." : (airTemp != null ? airTemp.toFixed(1) : "--");
+  const windText = loading ? "..." : (windSpeed != null ? windSpeed.toFixed(0) : "--");
+
+  // SVG arrow for wind direction
+  const arrowRotation = windDir != null ? windDir + 180 : 0;
+  const windArrow = windDir != null
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg); flex-shrink: 0;">
+        <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+       </svg>`
+    : '';
+
+  // Truncate name if too long
+  const displayName = name ? (name.length > 15 ? name.slice(0, 14) + '…' : name) : '';
+
+  return divIcon({
+    className: "weather-badge-marker",
+    html: `
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="
+          background: white;
+          padding: 5px 10px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          border: 2px solid ${waterColor};
+          white-space: nowrap;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        ">
+          ${name ? `<div style="font-size: 11px; color: #374151; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">${displayName}</div>` : ''}
+          <div style="display: flex; gap: 8px; align-items: center;">
+            ${loading ? `<div style="width: 16px; height: 16px; border: 2px solid ${waterColor}; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>` : `
+            <span style="color: ${waterColor};">${waterText}°</span>
+            <span style="color: #ea580c;">${airText}°</span>
+            <span style="color: #64748b; display: flex; align-items: center; gap: 3px;">${windText}${windArrow}</span>
+            `}
+          </div>
+        </div>
+        <div style="width: 2px; height: 18px; background: ${waterColor};"></div>
+        <div style="
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: ${waterColor};
+          box-shadow: 0 0 0 2px white;
+        "></div>
+      </div>
+    `,
+    iconSize: [140, 75],
+    iconAnchor: [70, 75],
+    popupAnchor: [0, -75],
+  });
+};
+
+// Wrapper for known spots
+const createSpotIcon = (
+  waterTemp: number | null,
+  airTemp: number | null,
+  windSpeed: number | null,
+  windDir: number | null,
+  name?: string
+) => {
+  return createWeatherBadge(waterTemp, airTemp, windSpeed, windDir, false, name);
+};
+
+// Wrapper for clicked location
+const createWeatherBadgeIcon = (
+  waterTemp: number | null,
+  airTemp: number | null,
+  windSpeed: number | null,
+  windDir: number | null,
+  loading: boolean
+) => {
+  return createWeatherBadge(waterTemp, airTemp, windSpeed, windDir, loading);
+};
+
+// Component to handle map click events
+function MapClickHandler({
+  onMapClick,
+  isAdminMode
+}: {
+  onMapClick: (lat: number, lng: number) => void;
+  isAdminMode: boolean;
+}) {
+  const map = useMapEvents({
+    click: (e) => {
+      map.closePopup(); // Close any open spot popup
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// Helper to convert wind direction degrees to compass direction
+const getWindDirectionText = (degrees: number) => {
+  const directions = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
+  const index = Math.round(degrees / 45) % 8;
+  return directions[index];
+};
+
+// Generate SVG sparkline paths from temperature data (past and future)
+function generateSparklinePaths(
+  temps: (number | null)[],
+  width: number,
+  height: number,
+  futureStartIndex: number
+): { pastPath: string; futurePath: string; nowX: number } {
+  const validTemps = temps.filter((t): t is number => t !== null);
+  if (validTemps.length < 2) return { pastPath: "", futurePath: "", nowX: width / 2 };
+
+  const min = Math.min(...validTemps);
+  const max = Math.max(...validTemps);
+
+  // Use a minimum range of 3 degrees to flatten the graph
+  const dataRange = max - min;
+  const minRange = 3;
+  const range = Math.max(dataRange, minRange);
+
+  // Center the data in the expanded range
+  const padding = (range - dataRange) / 2;
+  const adjustedMin = min - padding;
+
+  // Now is always at center since we have equal hours on both sides
+  const nowX = width / 2;
+
+  // Split temps into past and future
+  const pastTemps = futureStartIndex >= 0 ? temps.slice(0, futureStartIndex) : temps;
+  const futureTemps = futureStartIndex >= 0 ? temps.slice(futureStartIndex) : [];
+
+  // Build past points (0 to nowX)
+  const pastPoints: { x: number; y: number }[] = [];
+  pastTemps.forEach((temp, i) => {
+    if (temp === null) return;
+    const x = pastTemps.length > 1 ? (i / (pastTemps.length - 1)) * nowX : 0;
+    const y = height - ((temp - adjustedMin) / range) * height;
+    pastPoints.push({ x, y });
+  });
+
+  // Build future points (nowX to width)
+  const futurePoints: { x: number; y: number }[] = [];
+  futureTemps.forEach((temp, i) => {
+    if (temp === null) return;
+    const x = futureTemps.length > 1 ? nowX + (i / (futureTemps.length - 1)) * (width - nowX) : nowX;
+    const y = height - ((temp - adjustedMin) / range) * height;
+    futurePoints.push({ x, y });
+  });
+
+  // Connect past and future at nowX
+  if (pastPoints.length > 0 && futurePoints.length > 0) {
+    futurePoints.unshift({ ...pastPoints[pastPoints.length - 1], x: nowX });
+  }
+
+  const pastPath = pastPoints.length > 1
+    ? `M${pastPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L")}`
+    : "";
+
+  const futurePath = futurePoints.length > 1
+    ? `M${futurePoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" L")}`
+    : "";
+
+  return { pastPath, futurePath, nowX };
+}
+
+// Weather badge component that appears on map click
+function TempBadge({
+  coordinates,
+  onClose
+}: {
+  coordinates: { lat: number; lng: number } | null;
+  onClose: () => void;
+}) {
+  const [waterTemp, setWaterTemp] = useState<number | null>(null);
+  const [airTemp, setAirTemp] = useState<number | null>(null);
+  const [windSpeed, setWindSpeed] = useState<number | null>(null);
+  const [windDirection, setWindDirection] = useState<number | null>(null);
+  const [historicalTemps, setHistoricalTemps] = useState<(number | null)[]>([]);
+  const [historicalDates, setHistoricalDates] = useState<string[]>([]);
+  const [futureStartIndex, setFutureStartIndex] = useState<number>(-1);
+  const [loading, setLoading] = useState(true);
+  const markerRef = useRef<L.Marker>(null);
+
+  const fetchWeather = useCallback(async () => {
+    if (!coordinates) return;
+
+    setLoading(true);
+    try {
+      const [marineRes, weatherRes, historyRes] = await Promise.all([
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${coordinates.lat}&longitude=${coordinates.lng}&current=sea_surface_temperature&timezone=Europe/Copenhagen`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coordinates.lat}&longitude=${coordinates.lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&timezone=Europe/Copenhagen`),
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${coordinates.lat}&longitude=${coordinates.lng}&hourly=sea_surface_temperature&past_days=3&forecast_days=3&timezone=Europe/Copenhagen`),
+      ]);
+
+      if (marineRes.ok) {
+        const marineData = await marineRes.json();
+        const temp = marineData.current?.sea_surface_temperature;
+        if (typeof temp === "number") {
+          setWaterTemp(temp);
+        }
+      }
+
+      if (weatherRes.ok) {
+        const weatherData = await weatherRes.json();
+        const temp = weatherData.current?.temperature_2m;
+        const wind = weatherData.current?.wind_speed_10m;
+        const dir = weatherData.current?.wind_direction_10m;
+        if (typeof temp === "number") setAirTemp(temp);
+        if (typeof wind === "number") setWindSpeed(wind);
+        if (typeof dir === "number") setWindDirection(dir);
+      }
+
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        const times: string[] = historyData.hourly?.time || [];
+        const temps: (number | null)[] = historyData.hourly?.sea_surface_temperature || [];
+
+        // Get current hour in Danish time
+        const nowDanish = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+        const nowParts = nowDanish.split(/[- :]/);
+        const nowDate = new Date(
+          parseInt(nowParts[0]),
+          parseInt(nowParts[1]) - 1,
+          parseInt(nowParts[2]),
+          parseInt(nowParts[3])
+        );
+
+        // Filter to 72 hours past + 48 hours future from now
+        const filtered: { temp: number | null; isFuture: boolean; date: string }[] = [];
+        for (let i = 0; i < times.length; i++) {
+          const match = times[i].match(/(\d{4})-(\d{2})-(\d{2})T(\d{2})/);
+          if (!match) continue;
+
+          const dataDate = new Date(
+            parseInt(match[1]),
+            parseInt(match[2]) - 1,
+            parseInt(match[3]),
+            parseInt(match[4])
+          );
+          const hoursDiff = (dataDate.getTime() - nowDate.getTime()) / (1000 * 60 * 60);
+
+          // Include 72 hours past to 72 hours future
+          if (hoursDiff >= -72 && hoursDiff <= 72) {
+            filtered.push({
+              temp: temps[i],
+              isFuture: hoursDiff > 0,
+              date: `${parseInt(match[3])}/${parseInt(match[2])}`
+            });
+          }
+        }
+        setHistoricalTemps(filtered.map(f => f.temp));
+        setHistoricalDates(filtered.map(f => f.date));
+        setFutureStartIndex(filtered.findIndex(f => f.isFuture));
+      }
+    } catch (err) {
+      console.error("Failed to fetch weather:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [coordinates?.lat, coordinates?.lng]);
+
+  useEffect(() => {
+    if (coordinates) {
+      setWaterTemp(null);
+      setAirTemp(null);
+      setWindSpeed(null);
+      setWindDirection(null);
+      setHistoricalTemps([]);
+      setHistoricalDates([]);
+      setFutureStartIndex(-1);
+      fetchWeather();
+    }
+  }, [coordinates?.lat, coordinates?.lng, fetchWeather]);
+
+  if (!coordinates) return null;
+
+  // Wind direction arrow rotation
+  const arrowRotation = windDirection != null ? windDirection + 180 : 0;
+
+  // Weather badge with line and dot
+  const waterText = loading ? "..." : (waterTemp != null ? waterTemp.toFixed(1) + "°" : "--");
+  const airText = loading ? "..." : (airTemp != null ? airTemp.toFixed(1) + "°" : "--");
+  const windText = loading ? "..." : (windSpeed != null ? windSpeed.toFixed(0) : "--");
+
+  // Generate sparkline paths (past solid, future dashed)
+  const { pastPath, futurePath, nowX } = generateSparklinePaths(historicalTemps, 200, 50, futureStartIndex);
+
+  // Get start, now, and end dates/temps for labels
+  const startDate = historicalDates.length > 0 ? historicalDates[0] : '';
+  const endDate = historicalDates.length > 0 ? historicalDates[historicalDates.length - 1] : '';
+  const validTemps = historicalTemps.filter((t): t is number => t !== null);
+  const startTemp = validTemps.length > 0 ? validTemps[0] : null;
+  const endTemp = validTemps.length > 0 ? validTemps[validTemps.length - 1] : null;
+  const nowTemp = futureStartIndex > 0 && historicalTemps[futureStartIndex - 1] != null
+    ? historicalTemps[futureStartIndex - 1]
+    : null;
+
+  const clickedLocationIcon = divIcon({
+    className: "clicked-location-marker",
+    html: `
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="
+          background: white;
+          padding: 12px 16px;
+          border-radius: 12px;
+          font-size: 16px;
+          font-weight: 600;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        ">
+          <!-- Values row -->
+          <div style="display: flex; align-items: center; gap: 16px; justify-content: center;">
+            <span style="color: #2563eb; display: flex; align-items: center; gap: 6px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+              ${waterText}
+            </span>
+            <span style="color: #f97316; display: flex; align-items: center; gap: 6px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+              ${airText}
+            </span>
+            <span style="color: #4b5563; display: flex; align-items: center; gap: 6px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(${arrowRotation}deg);"><path d="M12 2L12 22M12 2L6 8M12 2L18 8"/></svg>
+              ${windText}
+            </span>
+          </div>
+          <!-- Sparkline -->
+          <svg width="200" height="50" style="overflow: visible;">
+            <defs>
+              <linearGradient id="sparkGradPast" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="sparkGradFuture" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f97316" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            ${pastPath ? `
+              <path d="${pastPath} L${nowX},50 L0,50 Z" fill="url(#sparkGradPast)" />
+              <path d="${pastPath}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            ` : ''}
+            ${futurePath ? `
+              <path d="${futurePath} L200,50 L${nowX},50 Z" fill="url(#sparkGradFuture)" />
+              <path d="${futurePath}" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>
+            ` : ''}
+            ${nowX > 0 ? `<line x1="${nowX}" y1="0" x2="${nowX}" y2="50" stroke="#ef4444" stroke-width="1.5"/>` : ''}
+          </svg>
+          <!-- Date labels underneath -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; width: 200px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; background: #f0f9ff; padding: 4px 8px; border-radius: 6px;">
+              <span style="font-weight: 600; color: #1e40af;">${startDate}</span>
+              <span style="font-size: 12px; font-weight: 700; color: #3b82f6;">${startTemp !== null ? startTemp.toFixed(1) + '°' : ''}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 4px 8px; border-radius: 6px;">
+              <span style="color: #991b1b; font-weight: 600; font-size: 10px;">Nu</span>
+              <span style="font-size: 12px; font-weight: 700; color: #ef4444;">${nowTemp !== null ? nowTemp.toFixed(1) + '°' : ''}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 4px 8px; border-radius: 6px;">
+              <span style="font-weight: 600; color: #c2410c;">${endDate}</span>
+              <span style="font-size: 12px; font-weight: 700; color: #f97316;">${endTemp !== null ? endTemp.toFixed(1) + '°' : ''}</span>
+            </div>
+          </div>
+        </div>
+        <div style="width: 2px; height: 20px; background: #3b82f6;"></div>
+        <div style="
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #3b82f6;
+          box-shadow: 0 0 0 3px white;
+        "></div>
+      </div>
+    `,
+    iconSize: [280, 190],
+    iconAnchor: [140, 190],
+  });
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[coordinates.lat, coordinates.lng]}
+      icon={clickedLocationIcon}
+      zIndexOffset={1000}
+      eventHandlers={{
+        click: onClose,
+      }}
+    />
+  );
+}
+
+// Sparkline component for spot popups
+function SpotSparkline({ lat, lng }: { lat: string; lng: string }) {
+  const [temps, setTemps] = useState<(number | null)[]>([]);
+  const [dates, setDates] = useState<string[]>([]);
+  const [futureStartIndex, setFutureStartIndex] = useState<number>(-1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(
+          `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}&hourly=sea_surface_temperature&past_days=3&forecast_days=3&timezone=Europe/Copenhagen`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const times: string[] = data.hourly?.time || [];
+          const tempData: (number | null)[] = data.hourly?.sea_surface_temperature || [];
+
+          const nowDanish = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Copenhagen' });
+          const nowParts = nowDanish.split(/[- :]/);
+          const nowDate = new Date(
+            parseInt(nowParts[0]),
+            parseInt(nowParts[1]) - 1,
+            parseInt(nowParts[2]),
+            parseInt(nowParts[3])
+          );
+
+          const filtered: { temp: number | null; isFuture: boolean; date: string }[] = [];
+          for (let i = 0; i < times.length; i++) {
+            const match = times[i].match(/(\d{4})-(\d{2})-(\d{2})T(\d{2})/);
+            if (!match) continue;
+
+            const dataDate = new Date(
+              parseInt(match[1]),
+              parseInt(match[2]) - 1,
+              parseInt(match[3]),
+              parseInt(match[4])
+            );
+            const hoursDiff = (dataDate.getTime() - nowDate.getTime()) / (1000 * 60 * 60);
+
+            if (hoursDiff >= -72 && hoursDiff <= 72) {
+              filtered.push({
+                temp: tempData[i],
+                isFuture: hoursDiff > 0,
+                date: `${parseInt(match[3])}/${parseInt(match[2])}`
+              });
+            }
+          }
+          setTemps(filtered.map(f => f.temp));
+          setDates(filtered.map(f => f.date));
+          setFutureStartIndex(filtered.findIndex(f => f.isFuture));
+        }
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [lat, lng]);
+
+  if (loading) {
+    return <div className="h-14 flex items-center justify-center text-xs text-gray-400">Indlæser graf...</div>;
+  }
+
+  const { pastPath, futurePath, nowX } = generateSparklinePaths(temps, 268, 40, futureStartIndex);
+  const startDate = dates.length > 0 ? dates[0] : '';
+  const endDate = dates.length > 0 ? dates[dates.length - 1] : '';
+  const validTemps = temps.filter((t): t is number => t !== null);
+  const startTemp = validTemps.length > 0 ? validTemps[0] : null;
+  const endTemp = validTemps.length > 0 ? validTemps[validTemps.length - 1] : null;
+  const nowTemp = futureStartIndex > 0 && temps[futureStartIndex - 1] != null
+    ? temps[futureStartIndex - 1]
+    : null;
+
+  return (
+    <div className="mt-2">
+      <svg width="268" height="40" style={{ overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="spotSparkGradPast" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="spotSparkGradFuture" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f97316" stopOpacity={0.15} />
+            <stop offset="100%" stopColor="#f97316" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        {pastPath && (
+          <>
+            <path d={`${pastPath} L${nowX},40 L0,40 Z`} fill="url(#spotSparkGradPast)" />
+            <path d={pastPath} fill="none" stroke="#3b82f6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </>
+        )}
+        {futurePath && (
+          <>
+            <path d={`${futurePath} L268,40 L${nowX},40 Z`} fill="url(#spotSparkGradFuture)" />
+            <path d={futurePath} fill="none" stroke="#f97316" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4,3" />
+          </>
+        )}
+        {nowX > 0 && <line x1={nowX} y1={0} x2={nowX} y2={40} stroke="#ef4444" strokeWidth={1.5} />}
+      </svg>
+      {/* Date labels underneath */}
+      <div className="flex justify-between items-start mt-1" style={{ width: 268 }}>
+        <div className="flex flex-col items-start bg-blue-50 px-2 py-1 rounded">
+          <span className="text-[10px] font-semibold text-blue-800">{startDate}</span>
+          <span className="text-xs font-bold text-blue-600">{startTemp !== null ? `${startTemp.toFixed(1)}°` : ''}</span>
+        </div>
+        <div className="flex flex-col items-center bg-red-50 px-2 py-1 rounded">
+          <span className="text-[10px] font-semibold text-red-800">Nu</span>
+          <span className="text-xs font-bold text-red-500">{nowTemp !== null ? `${nowTemp.toFixed(1)}°` : ''}</span>
+        </div>
+        <div className="flex flex-col items-end bg-orange-50 px-2 py-1 rounded">
+          <span className="text-[10px] font-semibold text-orange-800">{endDate}</span>
+          <span className="text-xs font-bold text-orange-500">{endTemp !== null ? `${endTemp.toFixed(1)}°` : ''}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function MapView() {
+  const { data: spots, isLoading, error } = useSpots();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [clickedCoords, setClickedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+
+  // Center on Østjylland area
+  const center: [number, number] = [56.25, 10.5];
+
+  const handleMapClick = (lat: number, lng: number) => {
+    if (isAdminMode) {
+      setClickedCoords({ lat, lng });
+      setIsAddModalOpen(true);
+      setTempBadgeCoords(null);
+    } else {
+      setTempBadgeCoords({ lat, lng });
+    }
+  };
+
+  return (
+    <div className="h-screen flex flex-col bg-background">
+      <Header />
+
+      <div className="flex-1 relative" style={{ minHeight: 0 }}>
+        {isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+              <p className="text-muted-foreground">Indlæser kort...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-50">
+            <div className="text-center">
+              <p className="text-destructive font-bold mb-2">Kunne ikke indlæse steder</p>
+              <Link href="/" className="text-primary hover:underline">Tilbage til forsiden</Link>
+            </div>
+          </div>
+        ) : (
+          <MapContainer
+            center={center}
+            zoom={10}
+            style={{ height: "100%", width: "100%" }}
+            className="z-0 absolute inset-0"
+          >
+            <TileLayer
+              attribution='&copy; Esri'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+            <MapClickHandler onMapClick={handleMapClick} isAdminMode={isAdminMode} />
+
+            {/* Existing spots */}
+            {spots?.map((spot) => (
+              <Marker
+                key={`${spot.id}-${spot.currentWaterTemp}-${spot.currentAirTemp}-${spot.windSpeed}`}
+                position={[Number(spot.latitude), Number(spot.longitude)]}
+                icon={createSpotIcon(spot.currentWaterTemp, spot.currentAirTemp, spot.windSpeed, spot.windDirection, spot.name)}
+                eventHandlers={{
+                  click: () => setTempBadgeCoords(null),
+                }}
+              >
+                <Popup maxWidth={300} minWidth={280} closeButton={false}>
+                  <div>
+                    {/* Spot Name */}
+                    <Link href={`/spot/${spot.id}`}>
+                      <h3 className="font-bold text-sm mb-2 text-center text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
+                        {spot.name}
+                      </h3>
+                    </Link>
+
+                    {/* Spot Image */}
+                    {spot.imageUrl && (
+                      <div className="h-32 mb-2 rounded-lg overflow-hidden">
+                        <img
+                          src={spot.imageUrl}
+                          alt={spot.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
+                    {/* Weather Data */}
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
+                      <div className="bg-blue-50 rounded-md py-1.5 px-1">
+                        <div className="text-lg font-bold text-blue-600">
+                          {spot.currentWaterTemp != null ? `${spot.currentWaterTemp.toFixed(1)}°` : "--"}
+                        </div>
+                        <div className="text-[9px] text-gray-500">Vand</div>
+                      </div>
+                      <div className="bg-orange-50 rounded-md py-1.5 px-1">
+                        <div className="text-lg font-bold text-orange-600">
+                          {spot.currentAirTemp != null ? `${spot.currentAirTemp.toFixed(1)}°` : "--"}
+                        </div>
+                        <div className="text-[9px] text-gray-500">Luft</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-md py-1.5 px-1">
+                        <div className="text-lg font-bold text-gray-700 flex items-center justify-center gap-0.5">
+                          {spot.windSpeed != null ? spot.windSpeed.toFixed(0) : "--"}
+                          {spot.windDirection != null && (
+                            <Navigation className="w-3 h-3 text-gray-400" style={{ transform: `rotate(${spot.windDirection + 180}deg)` }} />
+                          )}
+                        </div>
+                        <div className="text-[9px] text-gray-500">m/s</div>
+                      </div>
+                    </div>
+
+                    {/* Sparkline Graph */}
+                    <SpotSparkline lat={spot.latitude} lng={spot.longitude} />
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+            {/* Temperature badge for clicked location (non-admin mode) */}
+            {tempBadgeCoords && !isAdminMode && (
+              <TempBadge
+                coordinates={tempBadgeCoords}
+                onClose={() => setTempBadgeCoords(null)}
+              />
+            )}
+          </MapContainer>
+        )}
+
+        {/* Spot count and Admin toggle */}
+        <div className="absolute top-6 right-6 flex flex-col gap-2 z-[1000]">
+          <div className="bg-white rounded-xl shadow-lg px-4 py-2">
+            <span className="font-bold text-primary">{spots?.length || 0}</span>
+            <span className="text-muted-foreground ml-1">fiskesteder</span>
+          </div>
+
+          {/* Admin toggle */}
+          <button
+            onClick={() => {
+              setIsAdminMode(!isAdminMode);
+              setTempBadgeCoords(null);
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg transition-colors ${
+              isAdminMode
+                ? "bg-primary text-primary-foreground"
+                : "bg-white text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span className="text-sm font-medium">Admin</span>
+          </button>
+        </div>
+
+        {/* Bottom hint - changes based on mode */}
+        <div className={`absolute bottom-6 right-6 rounded-xl shadow-lg px-4 py-3 z-[1000] flex items-center gap-2 ${
+          isAdminMode
+            ? "bg-primary text-primary-foreground"
+            : "bg-white text-foreground"
+        }`}>
+          {isAdminMode ? (
+            <>
+              <Plus className="w-5 h-5" />
+              <span className="text-sm font-medium">Klik for at tilføje sted</span>
+            </>
+          ) : (
+            <>
+              <Waves className="w-5 h-5 text-primary" />
+              <span className="text-sm font-medium">Klik for at se temperatur</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <AddSpotModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        coordinates={clickedCoords}
+      />
+    </div>
+  );
+}

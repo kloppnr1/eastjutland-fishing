@@ -9,9 +9,8 @@ export default function Home() {
   const { data: spots, isLoading, error } = useSpots();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredSpots = spots?.filter(spot => 
-    spot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    spot.bestFor.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSpots = spots?.filter(spot =>
+    spot.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -28,14 +27,14 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent font-semibold text-sm mb-6 border border-accent/20">
-              Live Sea Temperatures
+              Fiskevejr i realtid
             </span>
             <h1 className="text-5xl md:text-7xl font-display font-bold text-primary mb-6 tracking-tight">
-              Fishing on <span className="text-accent">Djursland</span>
+              Lystfiskeri på <span className="text-accent">Østjylland</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              Find the perfect spot for Sea Trout, Cod, and Flatfish along the beautiful 
-              coastal peninsula of Denmark. Real-time water data for better catch rates.
+              Find det perfekte sted til havørred, torsk og fladfisk langs den smukke
+              kyst på Østjylland. Vandtemperaturer i realtid for bedre fangster.
             </p>
 
             {/* Search Bar */}
@@ -45,7 +44,7 @@ export default function Home() {
               </div>
               <input
                 type="text"
-                placeholder="Search spots, species (e.g., Sea Trout)..."
+                placeholder="Søg efter steder..."
                 className="w-full pl-11 pr-4 py-4 rounded-2xl border-2 border-border/50 bg-white shadow-xl shadow-primary/5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all text-lg"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -60,10 +59,10 @@ export default function Home() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-display font-bold text-primary flex items-center gap-2">
             <Waves className="w-6 h-6 text-accent" />
-            Popular Spots
+            Populære steder
           </h2>
           <span className="text-sm text-muted-foreground font-medium">
-            {filteredSpots ? `${filteredSpots.length} locations found` : 'Loading...'}
+            {filteredSpots ? `${filteredSpots.length} steder fundet` : 'Indlæser...'}
           </span>
         </div>
 
@@ -76,9 +75,9 @@ export default function Home() {
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-20 text-center bg-red-50/50 rounded-3xl border border-red-100">
             <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-            <h3 className="text-xl font-bold text-destructive mb-2">Failed to load spots</h3>
+            <h3 className="text-xl font-bold text-destructive mb-2">Kunne ikke indlæse steder</h3>
             <p className="text-muted-foreground max-w-md">
-              We couldn't fetch the fishing spot data. Please check your connection and try again.
+              Vi kunne ikke hente fiskesteder. Tjek din forbindelse og prøv igen.
             </p>
           </div>
         ) : filteredSpots && filteredSpots.length > 0 ? (
@@ -89,12 +88,12 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-lg text-muted-foreground">No fishing spots found matching "{searchTerm}"</p>
-            <button 
+            <p className="text-lg text-muted-foreground">Ingen fiskesteder fundet for "{searchTerm}"</p>
+            <button
               onClick={() => setSearchTerm("")}
               className="mt-4 text-primary font-medium hover:underline underline-offset-4"
             >
-              Clear search
+              Ryd søgning
             </button>
           </div>
         )}
@@ -103,12 +102,12 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-white border-t border-border/50 py-12">
         <div className="container mx-auto px-4 md:px-6 text-center text-muted-foreground">
-          <p className="mb-4 font-display font-bold text-primary text-lg">Djursland Angling Guide</p>
+          <p className="mb-4 font-display font-bold text-primary text-lg">Østjylland Lystfiskerguide</p>
           <p className="text-sm mb-8 max-w-md mx-auto">
-            Providing reliable sea temperature data and location insights for anglers exploring the Danish coast.
+            Pålidelige havtemperaturer og lokalitetsinfo for lystfiskere langs den danske kyst.
           </p>
           <p className="text-xs opacity-50">
-            &copy; {new Date().getFullYear()} Djursland Angling. Data provided by NOAA/Meteomatics.
+            &copy; {new Date().getFullYear()} Østjylland Lystfiskeri. Data fra Open-Meteo.
           </p>
         </div>
       </footer>
