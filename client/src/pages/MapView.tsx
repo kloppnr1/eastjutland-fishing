@@ -65,8 +65,8 @@ const createWeatherBadge = (
               height: 0;
               border-left: 10px solid transparent;
               border-right: 10px solid transparent;
-              border-bottom: 18px solid #1e293b;
-              filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+              border-bottom: 18px solid #ec4899;
+              filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
             "></div>
           </div>
           ` : ''}
