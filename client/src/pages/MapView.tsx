@@ -93,33 +93,27 @@ const createSpotIcon = (
   return createWeatherBadge(waterTemp, airTemp, windSpeed, windDir, false, name);
 };
 
-// Webcam marker icon
-const createWebcamIcon = (name?: string) => {
-  const displayName = name ? (name.length > 18 ? name.slice(0, 17) + '…' : name) : '';
-
+// Webcam marker icon - just camera icon
+const createWebcamIcon = () => {
   return divIcon({
     className: "webcam-marker",
     html: `
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="
           background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-          padding: 6px 12px;
-          border-radius: 10px;
-          font-size: 12px;
-          font-weight: 600;
+          padding: 10px;
+          border-radius: 50%;
           box-shadow: 0 3px 10px rgba(124, 58, 237, 0.4);
-          white-space: nowrap;
           display: flex;
           align-items: center;
-          gap: 6px;
+          justify-content: center;
           color: white;
         ">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
           </svg>
-          ${displayName}
         </div>
-        <div style="width: 2px; height: 14px; background: #7c3aed;"></div>
+        <div style="width: 2px; height: 10px; background: #7c3aed;"></div>
         <div style="
           width: 8px;
           height: 8px;
@@ -129,9 +123,9 @@ const createWebcamIcon = (name?: string) => {
         "></div>
       </div>
     `,
-    iconSize: [140, 55],
-    iconAnchor: [70, 55],
-    popupAnchor: [0, -55],
+    iconSize: [40, 58],
+    iconAnchor: [20, 58],
+    popupAnchor: [0, -58],
   });
 };
 
@@ -746,7 +740,7 @@ export default function MapView() {
                   key={`${spot.id}-${spot.currentWaterTemp}-${spot.currentAirTemp}-${spot.windSpeed}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={isWebcam
-                    ? createWebcamIcon(spot.name)
+                    ? createWebcamIcon()
                     : createSpotIcon(spot.currentWaterTemp, spot.currentAirTemp, spot.windSpeed, spot.windDirection, spot.name)
                   }
                   eventHandlers={{
