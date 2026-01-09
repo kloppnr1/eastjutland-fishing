@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
 import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
-import { Loader2, Waves, Navigation } from "lucide-react";
+import { Loader2, Navigation } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearch } from "wouter";
 import { AddSpotModal } from "@/components/AddSpotModal";
@@ -217,7 +217,33 @@ function TempBadge({
   const [historicalDates, setHistoricalDates] = useState<string[]>([]);
   const [futureStartIndex, setFutureStartIndex] = useState<number>(-1);
   const [loading, setLoading] = useState(true);
+  const [placeName, setPlaceName] = useState<string | null>(null);
   const markerRef = useRef<L.Marker>(null);
+
+  // Reverse geocoding to get place name
+  const fetchPlaceName = useCallback(async () => {
+    if (!coordinates) return;
+
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=14&addressdetails=1`,
+        { headers: { 'Accept-Language': 'da' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const address = data.address || {};
+        const name = address.beach || address.water || address.bay ||
+                     address.peninsula || address.locality || address.hamlet ||
+                     address.village || address.suburb || address.town ||
+                     address.municipality || data.name;
+        if (name) {
+          setPlaceName(name);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch place name:", err);
+    }
+  }, [coordinates?.lat, coordinates?.lng]);
 
   const fetchWeather = useCallback(async () => {
     if (!coordinates) return;
@@ -306,9 +332,11 @@ function TempBadge({
       setHistoricalTemps([]);
       setHistoricalDates([]);
       setFutureStartIndex(-1);
+      setPlaceName(null);
       fetchWeather();
+      fetchPlaceName();
     }
-  }, [coordinates?.lat, coordinates?.lng, fetchWeather]);
+  }, [coordinates?.lat, coordinates?.lng, fetchWeather, fetchPlaceName]);
 
   if (!coordinates) return null;
 
@@ -348,6 +376,10 @@ function TempBadge({
           flex-direction: column;
           gap: 8px;
         ">
+          <!-- Place name -->
+          <div style="font-size: 14px; font-weight: 700; color: #1e3a5f; text-align: center; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 20px;">
+            ${placeName || ''}
+          </div>
           <!-- Values row -->
           <div style="display: flex; align-items: center; gap: 16px; justify-content: center;">
             <span style="color: #2563eb; display: flex; align-items: center; gap: 6px;">
@@ -427,8 +459,8 @@ function TempBadge({
         "></div>
       </div>
     `,
-    iconSize: [280, 210],
-    iconAnchor: [140, 210],
+    iconSize: [280, 235],
+    iconAnchor: [140, 235],
   });
 
   // Invisible button marker positioned over the "Add spot" button (left-aligned)
@@ -436,7 +468,7 @@ function TempBadge({
     className: "add-spot-button-marker",
     html: `<div style="width: 90px; height: 30px; cursor: pointer;"></div>`,
     iconSize: [90, 30],
-    iconAnchor: [110, 55], // Position over the left-aligned button
+    iconAnchor: [110, 52], // Position over the left-aligned button
   });
 
   return (
@@ -644,12 +676,18 @@ export default function MapView() {
           <MapContainer
             center={center}
             zoom={initialZoom}
+            zoomControl={false}
             style={{ height: "100%", width: "100%" }}
             className="z-0 absolute inset-0"
           >
             <TileLayer
               attribution='&copy; Esri'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            />
+            {/* Labels overlay */}
+            <TileLayer
+              url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+              pane="overlayPane"
             />
             <MapClickHandler onMapClick={handleMapClick} />
             {targetLocation && (
@@ -737,11 +775,6 @@ export default function MapView() {
           </div>
         </div>
 
-        {/* Bottom hint */}
-        <div className="absolute bottom-6 right-6 rounded-xl shadow-lg px-4 py-3 z-[1000] flex items-center gap-2 bg-white text-foreground">
-          <Waves className="w-5 h-5 text-primary" />
-          <span className="text-sm font-medium">Klik for at se temperatur</span>
-        </div>
       </div>
 
       <AddSpotModal

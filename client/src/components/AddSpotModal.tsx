@@ -29,6 +29,35 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [suggestedName, setSuggestedName] = useState<string | null>(null);
+
+  // Reverse geocoding to get place name
+  const fetchPlaceName = useCallback(async () => {
+    if (!coordinates) return;
+
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=14&addressdetails=1`,
+        { headers: { 'Accept-Language': 'da' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        // Try to get a meaningful name from the response
+        const address = data.address || {};
+        const name = address.beach || address.water || address.bay ||
+                     address.peninsula || address.locality || address.hamlet ||
+                     address.village || address.suburb || address.town ||
+                     address.municipality || data.name;
+        if (name) {
+          setSuggestedName(name);
+          // Only pre-fill if name field is empty
+          setFormData(prev => prev.name === "" ? { ...prev, name } : prev);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch place name:", err);
+    }
+  }, [coordinates?.lat, coordinates?.lng]);
 
   const fetchWeather = useCallback(async () => {
     if (!coordinates) return;
@@ -77,7 +106,7 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
     }
   }, [coordinates?.lat, coordinates?.lng]);
 
-  // Fetch weather when coordinates change and refresh every 10 minutes
+  // Fetch weather and place name when coordinates change
   useEffect(() => {
     if (!coordinates || !isOpen) {
       setWaterTemp(null);
@@ -85,15 +114,17 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
       setWindSpeed(null);
       setWindDirection(null);
       setMeasurementTime(null);
+      setSuggestedName(null);
       return;
     }
 
     fetchWeather();
+    fetchPlaceName();
 
-    // Refresh every 10 minutes
+    // Refresh weather every 10 minutes
     const interval = setInterval(fetchWeather, 10 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [coordinates?.lat, coordinates?.lng, isOpen, fetchWeather]);
+  }, [coordinates?.lat, coordinates?.lng, isOpen, fetchWeather, fetchPlaceName]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -158,6 +189,7 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
     setImageFile(null);
     setImagePreview(null);
     setError("");
+    setSuggestedName(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
