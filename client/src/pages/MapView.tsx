@@ -10,63 +10,43 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
-// Compact weather badge - used for both known spots and clicked locations
+// Compact weather badge - used for known fishing spots
 const createWeatherBadge = (
   waterTemp: number | null,
-  airTemp: number | null,
-  windSpeed: number | null,
-  windDir: number | null,
-  loading: boolean = false,
-  name?: string
+  windDir: number | null
 ) => {
-  const waterColor = loading ? "#6b7280" : waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-
-  const waterText = loading ? "..." : (waterTemp != null ? waterTemp.toFixed(1) : "--");
-  const airText = loading ? "..." : (airTemp != null ? airTemp.toFixed(1) : "--");
-  const windText = loading ? "..." : (windSpeed != null ? windSpeed.toFixed(0) : "--");
+  const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
+  const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
 
   // SVG arrow for wind direction
   const arrowRotation = windDir != null ? windDir + 180 : 0;
   const windArrow = windDir != null
-    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg); flex-shrink: 0;">
+    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
         <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
        </svg>`
     : '';
 
-  // Truncate name if too long
-  const displayName = name ? (name.length > 15 ? name.slice(0, 14) + '…' : name) : '';
-
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <style>
-        @keyframes spin { to { transform: rotate(360deg); } }
-      </style>
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="
           background: white;
-          padding: 5px 10px;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 600;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          padding: 6px 10px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 700;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
           border: 2px solid ${waterColor};
           white-space: nowrap;
           display: flex;
-          flex-direction: column;
           align-items: center;
-          gap: 2px;
+          gap: 6px;
         ">
-          ${name ? `<div style="font-size: 11px; color: #374151; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis;">${displayName}</div>` : ''}
-          <div style="display: flex; gap: 8px; align-items: center;">
-            ${loading ? `<div style="width: 16px; height: 16px; border: 2px solid ${waterColor}; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>` : `
-            <span style="color: ${waterColor};">${waterText}°</span>
-            <span style="color: #ea580c;">${airText}°</span>
-            <span style="color: #64748b; display: flex; align-items: center; gap: 3px;">${windText}${windArrow}</span>
-            `}
-          </div>
+          <span style="color: ${waterColor};">${waterText}°</span>
+          ${windArrow}
         </div>
-        <div style="width: 2px; height: 18px; background: ${waterColor};"></div>
+        <div style="width: 2px; height: 12px; background: ${waterColor};"></div>
         <div style="
           width: 8px;
           height: 8px;
@@ -76,21 +56,18 @@ const createWeatherBadge = (
         "></div>
       </div>
     `,
-    iconSize: [140, 75],
-    iconAnchor: [70, 75],
-    popupAnchor: [0, -75],
+    iconSize: [80, 55],
+    iconAnchor: [40, 55],
+    popupAnchor: [0, -55],
   });
 };
 
 // Wrapper for known spots
 const createSpotIcon = (
   waterTemp: number | null,
-  airTemp: number | null,
-  windSpeed: number | null,
-  windDir: number | null,
-  name?: string
+  windDir: number | null
 ) => {
-  return createWeatherBadge(waterTemp, airTemp, windSpeed, windDir, false, name);
+  return createWeatherBadge(waterTemp, windDir);
 };
 
 // Webcam marker icon - just camera icon
@@ -127,17 +104,6 @@ const createWebcamIcon = () => {
     iconAnchor: [20, 58],
     popupAnchor: [0, -58],
   });
-};
-
-// Wrapper for clicked location
-const createWeatherBadgeIcon = (
-  waterTemp: number | null,
-  airTemp: number | null,
-  windSpeed: number | null,
-  windDir: number | null,
-  loading: boolean
-) => {
-  return createWeatherBadge(waterTemp, airTemp, windSpeed, windDir, loading);
 };
 
 // Component to handle map click events
@@ -741,7 +707,7 @@ export default function MapView() {
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={isWebcam
                     ? createWebcamIcon()
-                    : createSpotIcon(spot.currentWaterTemp, spot.currentAirTemp, spot.windSpeed, spot.windDirection, spot.name)
+                    : createSpotIcon(spot.currentWaterTemp, spot.windDirection)
                   }
                   eventHandlers={{
                     click: () => setTempBadgeCoords(null),
