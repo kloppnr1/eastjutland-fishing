@@ -81,7 +81,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
       ">
         ${n}
       </div>
-    `,className:"cluster-icon",iconSize:[r,r],iconAnchor:[r/2,r/2]})};function xde(e){const t=new Map;if(e.length===0)return t;const n=[0,45,90,135,180,225,270,315],r=[15,40,65,90];for(const i of e){const o=parseFloat(i.latitude),a=parseFloat(i.longitude),u=[];for(const f of e){if(f.id===i.id)continue;const d=Math.sqrt(Math.pow(o-parseFloat(f.latitude),2)+Math.pow(a-parseFloat(f.longitude),2));d<.15&&u.push({id:f.id,distance:d})}if(u.sort((f,d)=>f.distance-d.distance),u.length===0)t.set(i.id,{stemLength:15,overrideDirection:null});else{let f=0;for(const S of u)S.id<i.id&&f++;const d=f%n.length,p=Math.floor(f/n.length)%r.length,m=u[0]?.distance||1;let v=n[d],x=r[p];m<.03&&(v=i.id%4*90+45,x=r[i.id%r.length]),t.set(i.id,{stemLength:x,overrideDirection:v})}}return t}const bde=(e,t,n,r,i=1,o=12,a=null)=>{const u=e===null?"#6b7280":e<5?"#3b82f6":e<12?"#14b8a6":"#f97316",f=e!=null?e.toFixed(1):"--",d=t!=null?t.toFixed(0):"--",p=a??r,m=p!=null?p+180:0,v=-m,x=n!=null?n+180-m:0;return Jr.divIcon({className:"weather-badge-marker",html:`
+    `,className:"cluster-icon",iconSize:[r,r],iconAnchor:[r/2,r/2]})};function xde(e){const t=new Map;if(e.length===0)return t;const n=[0,45,90,135,180,225,270,315],r=[15,40,65,90];for(const i of e){const o=parseFloat(i.latitude),a=parseFloat(i.longitude),u=[];for(const f of e){if(f.id===i.id)continue;const d=Math.sqrt(Math.pow(o-parseFloat(f.latitude),2)+Math.pow(a-parseFloat(f.longitude),2));d<.15&&u.push({id:f.id,distance:d})}if(u.sort((f,d)=>f.distance-d.distance),u.length===0)t.set(i.id,{stemLength:15,overrideDirection:null});else{let f=0;for(const S of u)S.id<i.id&&f++;const d=f%n.length,p=Math.floor(f/n.length)%r.length,m=u[0]?.distance||1;let v=n[d],x=r[p];m<.03&&(v=i.id%4*90+45,x=r[i.id%r.length]),t.set(i.id,{stemLength:x,overrideDirection:v})}}return t}const bde=(e,t,n,r,i=1,o=12,a=null)=>{const u=e===null?"#6b7280":e<5?"#3b82f6":e<12?"#14b8a6":"#f97316",f=e!=null?e.toFixed(1):"--",d=t!=null?t.toFixed(0):"--",p=a??r,m=p!=null?p+180:0,v=-m,x=n!=null?n+180:0;return Jr.divIcon({className:"weather-badge-marker",html:`
       <div style="position: relative; width: 100px; height: 100px; transform: scale(${i}); transform-origin: center bottom;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
@@ -92,7 +92,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: #7c3aed;
+          background: #3b82f6;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
         "></div>
@@ -112,62 +112,34 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             transform: translateX(-50%);
             width: 2px;
             height: ${o}px;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            background: #3b82f6;
           "></div>
           <!-- Badge container -->
           <div style="
             position: absolute;
             bottom: ${o}px;
             left: 50%;
-            transform: translateX(-50%);
-            width: 46px;
-            height: 46px;
+            transform: translateX(-50%) rotate(${v}deg);
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            padding: 6px 8px;
+            min-width: 52px;
           ">
-            <!-- Wind direction pointer (behind circle) -->
-            ${n!=null?`
-            <div style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 46px;
-              height: 46px;
-              transform: rotate(${x}deg);
-              z-index: 1;
-            ">
-              <div style="
-                position: absolute;
-                top: -10px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 10px solid transparent;
-                border-right: 10px solid transparent;
-                border-bottom: 18px solid #ec4899;
-                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
-              "></div>
+            <!-- Row 1: Wave + Water Temp -->
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${u}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 700; color: ${u};">${f}°</span>
             </div>
-            `:""}
-            <!-- Compass circle (counter-rotated to keep text upright) -->
-            <div style="
-              position: relative;
-              z-index: 2;
-              width: 46px;
-              height: 46px;
-              background: white;
-              border-radius: 50%;
-              box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-              border: 2.5px solid ${u};
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              line-height: 1.15;
-              transform: rotate(${v}deg);
-            ">
-              <span style="font-size: 14px; font-weight: 800; color: ${u};">${f}°</span>
-              <span style="font-size: 11px; font-weight: 700; color: #475569;">${d}</span>
+            <!-- Row 2: Wind Arrow + Wind Speed -->
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${x}deg);">
+                <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 700; color: #64748b;">${d}</span>
             </div>
           </div>
         </div>

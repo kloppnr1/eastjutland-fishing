@@ -142,7 +142,7 @@ function calculateStemProps(
   return stemProps;
 }
 
-// Compass-style round badge - shows water temp + wind speed with direction pointer
+// Square info badge - shows water temp and wind info
 // seaDirection: 0-360 degrees indicating where the sea is (badge points away from it)
 // scale: 0-1 for zoom-based scaling
 // stemLength: length of stem in pixels (default 12)
@@ -165,11 +165,8 @@ const createWeatherBadge = (
   const badgeRotation = effectiveSeaDirection != null ? effectiveSeaDirection + 180 : 0;
   // Counter-rotate content to keep text upright
   const contentRotation = -badgeRotation;
-  // Wind arrow needs to account for badge rotation
-  const arrowRotation = windDir != null ? windDir + 180 - badgeRotation : 0;
-
-  // Keep iconSize/iconAnchor constant - CSS scale handles visual sizing
-  // transform-origin: center bottom keeps the dot position fixed during scaling
+  // Wind arrow rotation (points where wind is coming FROM)
+  const arrowRotation = windDir != null ? windDir + 180 : 0;
 
   return divIcon({
     className: "weather-badge-marker",
@@ -184,7 +181,7 @@ const createWeatherBadge = (
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: #7c3aed;
+          background: #3b82f6;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
         "></div>
@@ -204,62 +201,34 @@ const createWeatherBadge = (
             transform: translateX(-50%);
             width: 2px;
             height: ${stemLength}px;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            background: #3b82f6;
           "></div>
           <!-- Badge container -->
           <div style="
             position: absolute;
             bottom: ${stemLength}px;
             left: 50%;
-            transform: translateX(-50%);
-            width: 46px;
-            height: 46px;
+            transform: translateX(-50%) rotate(${contentRotation}deg);
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            padding: 6px 8px;
+            min-width: 52px;
           ">
-            <!-- Wind direction pointer (behind circle) -->
-            ${windDir != null ? `
-            <div style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 46px;
-              height: 46px;
-              transform: rotate(${arrowRotation}deg);
-              z-index: 1;
-            ">
-              <div style="
-                position: absolute;
-                top: -10px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 10px solid transparent;
-                border-right: 10px solid transparent;
-                border-bottom: 18px solid #ec4899;
-                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
-              "></div>
+            <!-- Row 1: Wave + Water Temp -->
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
             </div>
-            ` : ''}
-            <!-- Compass circle (counter-rotated to keep text upright) -->
-            <div style="
-              position: relative;
-              z-index: 2;
-              width: 46px;
-              height: 46px;
-              background: white;
-              border-radius: 50%;
-              box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-              border: 2.5px solid ${waterColor};
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              line-height: 1.15;
-              transform: rotate(${contentRotation}deg);
-            ">
-              <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
-              <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
+            <!-- Row 2: Wind Arrow + Wind Speed -->
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+                <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+              </svg>
+              <span style="font-size: 13px; font-weight: 700; color: #64748b;">${windText}</span>
             </div>
           </div>
         </div>
