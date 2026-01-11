@@ -402,7 +402,9 @@ function LocateButton() {
   const map = useMap();
   const [locating, setLocating] = useState(false);
 
-  const handleLocate = () => {
+  const handleLocate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
     if (!navigator.geolocation) {
       alert("Geolocation understøttes ikke af din browser");
       return;
@@ -427,6 +429,7 @@ function LocateButton() {
   return (
     <button
       onClick={handleLocate}
+      onMouseDown={(e) => e.stopPropagation()}
       disabled={locating}
       className="absolute bottom-6 right-6 z-[1000] bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
       title="Find min placering"
