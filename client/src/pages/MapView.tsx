@@ -140,101 +140,17 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   });
 };
 
-// Calculate stem properties for spots to avoid overlap
-// Uses spatial grid approach - nearby spots get different direction/length combos
-interface StemProps {
-  stemLength: number;
-  overrideDirection: number | null;
-}
-
-function calculateStemProps(
-  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string }>
-): Map<number, StemProps> {
-  const stemProps = new Map<number, StemProps>();
-
-  if (spots.length === 0) return stemProps;
-
-  // Available configurations - 8 directions × 4 lengths = 32 unique positions
-  const DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315];
-  const LENGTHS = [15, 40, 65, 90];
-
-  // Process ALL spots (fishing + webcams)
-  for (const spot of spots) {
-    const lat = parseFloat(spot.latitude);
-    const lng = parseFloat(spot.longitude);
-
-    // Find all nearby spots sorted by distance
-    const neighbors: Array<{ id: number; distance: number }> = [];
-
-    for (const other of spots) {
-      if (other.id === spot.id) continue;
-      const d = Math.sqrt(
-        Math.pow(lat - parseFloat(other.latitude), 2) +
-        Math.pow(lng - parseFloat(other.longitude), 2)
-      );
-      if (d < 0.15) { // ~15km
-        neighbors.push({ id: other.id, distance: d });
-      }
-    }
-
-    // Sort by distance (closest first)
-    neighbors.sort((a, b) => a.distance - b.distance);
-
-    if (neighbors.length === 0) {
-      // No neighbors - use sea direction (or default for webcams)
-      stemProps.set(spot.id, { stemLength: 15, overrideDirection: null });
-    } else {
-      // Count how many neighbors have lower IDs (determines our "slot")
-      let slot = 0;
-      for (const n of neighbors) {
-        if (n.id < spot.id) slot++;
-      }
-
-      // Pick direction and length based on slot
-      const dirIndex = slot % DIRECTIONS.length;
-      const lenIndex = Math.floor(slot / DIRECTIONS.length) % LENGTHS.length;
-
-      const closestDist = neighbors[0]?.distance || 1;
-      let direction = DIRECTIONS[dirIndex];
-      let length = LENGTHS[lenIndex];
-
-      // If extremely close (<3km), use opposite quadrants
-      if (closestDist < 0.03) {
-        const quadrant = (spot.id % 4);
-        direction = quadrant * 90 + 45; // 45, 135, 225, 315
-        length = LENGTHS[(spot.id % LENGTHS.length)];
-      }
-
-      stemProps.set(spot.id, {
-        stemLength: length,
-        overrideDirection: direction
-      });
-    }
-  }
-
-  return stemProps;
-}
-
 // Square info badge - shows water temp and wind info
 // scale: 0-1 for zoom-based scaling
-// stemLength: length of stem in pixels (default 12)
-// rotation: badge stem rotation in degrees (for nearby spot separation)
 const createWeatherBadge = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  scale: number = 1,
-  stemLength: number = 12,
-  rotation: number = 0
+  scale: number = 1
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
-
-  // Badge rotation for nearby spot separation
-  const badgeRotation = rotation;
-  // Counter-rotate content to keep text upright
-  const contentRotation = -badgeRotation;
   // Wind arrow rotation (points where wind is coming FROM)
   const arrowRotation = windDir != null ? windDir + 180 : 0;
 
@@ -242,7 +158,7 @@ const createWeatherBadge = (
     className: "weather-badge-marker",
     html: `
       <div style="position: relative; width: 20px; height: 20px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none; overflow: visible;">
-        <!-- Fixed anchor dot at center-bottom -->
+        <!-- Anchor dot at center-bottom -->
         <div style="
           position: absolute;
           bottom: 5px;
@@ -257,65 +173,54 @@ const createWeatherBadge = (
           pointer-events: auto;
           cursor: pointer;
         "></div>
-        <!-- Rotating badge and stem -->
+        <!-- Stem pointing upward -->
         <div style="
           position: absolute;
           bottom: 15px;
           left: 50%;
-          transform-origin: bottom center;
-          transform: translateX(-50%) rotate(${badgeRotation}deg);
+          transform: translateX(-50%);
+          width: 2px;
+          height: 12px;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
           pointer-events: none;
+        "></div>
+        <!-- Badge container -->
+        <div style="
+          position: absolute;
+          bottom: 27px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          border-radius: 6px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+          padding: 6px 10px;
+          white-space: nowrap;
+          pointer-events: auto;
+          cursor: pointer;
         ">
-          <!-- Stem -->
-          <div style="
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: ${stemLength}px;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            pointer-events: none;
-          "></div>
-          <!-- Badge container -->
-          <div style="
-            position: absolute;
-            bottom: ${stemLength}px;
-            left: 50%;
-            transform: translateX(-50%) rotate(${contentRotation}deg);
-            background: white;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-            padding: 6px 10px;
-            white-space: nowrap;
-            pointer-events: auto;
-            cursor: pointer;
-          ">
-            <!-- Row 1: Wave + Water Temp -->
-            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-                <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-              </svg>
-              <span style="font-size: 14px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
-            </div>
-            <!-- Row 2: Wind Arrow + Wind Speed -->
-            <div style="display: flex; align-items: center; gap: 5px;">
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
-                <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${arrowRotation}deg);"/>
-              </svg>
-              <span style="font-size: 14px; font-weight: 700; color: #64748b;">${windText}</span>
-            </div>
+          <!-- Row 1: Wave + Water Temp -->
+          <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+            </svg>
+            <span style="font-size: 14px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
+          </div>
+          <!-- Row 2: Wind Arrow + Wind Speed -->
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${arrowRotation}deg);"/>
+            </svg>
+            <span style="font-size: 14px; font-weight: 700; color: #64748b;">${windText}</span>
           </div>
         </div>
       </div>
     `,
     iconSize: [20, 20],
     iconAnchor: [10, 15],
-    // Position popup at badge edge - adjust for stem length (base 12px gives offset 8)
-    popupAnchor: [0, Math.round(8 + (12 - stemLength) * scale)],
+    popupAnchor: [0, 8],
   });
 };
 
@@ -324,11 +229,9 @@ const createSpotIcon = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  scale: number = 1,
-  stemLength: number = 12,
-  rotation: number = 0
+  scale: number = 1
 ) => {
-  return createWeatherBadge(waterTemp, windSpeed, windDir, scale, stemLength, rotation);
+  return createWeatherBadge(waterTemp, windSpeed, windDir, scale);
 };
 
 // Expanded badge when spot is selected - shows full info
@@ -492,15 +395,8 @@ const createExpandedBadge = (
   });
 };
 
-// Webcam marker icon - with rotation and stem length support
-const createWebcamIcon = (
-  scale: number = 1,
-  stemLength: number = 15,
-  overrideDirection: number | null = null
-) => {
-  const rotation = overrideDirection ?? 0;
-  const contentRotation = -rotation;
-
+// Webcam marker icon - always points upward
+const createWebcamIcon = (scale: number = 1) => {
   return divIcon({
     className: "webcam-marker",
     html: `
@@ -520,54 +416,43 @@ const createWebcamIcon = (
           pointer-events: auto;
           cursor: pointer;
         "></div>
-        <!-- Rotating icon and stem -->
+        <!-- Stem pointing upward -->
         <div style="
           position: absolute;
           bottom: 15px;
           left: 50%;
-          transform-origin: bottom center;
-          transform: translateX(-50%) rotate(${rotation}deg);
+          transform: translateX(-50%);
+          width: 2px;
+          height: 15px;
+          background: #7c3aed;
           pointer-events: none;
+        "></div>
+        <!-- Icon container -->
+        <div style="
+          position: absolute;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+          padding: 10px;
+          border-radius: 50%;
+          box-shadow: 0 3px 10px rgba(124, 58, 237, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          pointer-events: auto;
+          cursor: pointer;
         ">
-          <!-- Stem -->
-          <div style="
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            height: ${stemLength}px;
-            background: #7c3aed;
-            pointer-events: none;
-          "></div>
-          <!-- Icon container -->
-          <div style="
-            position: absolute;
-            bottom: ${stemLength}px;
-            left: 50%;
-            transform: translateX(-50%) rotate(${contentRotation}deg);
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            padding: 10px;
-            border-radius: 50%;
-            box-shadow: 0 3px 10px rgba(124, 58, 237, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            pointer-events: auto;
-            cursor: pointer;
-          ">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
-            </svg>
-          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+          </svg>
         </div>
       </div>
     `,
     iconSize: [20, 20],
     iconAnchor: [10, 15],
-    // Position popup at webcam icon edge - adjust for stem length (base 15px gives offset 5)
-    popupAnchor: [0, Math.round(5 + (15 - stemLength) * scale)],
+    popupAnchor: [0, 5],
   });
 };
 
@@ -1176,12 +1061,6 @@ export default function MapView() {
     return Math.min(1, Math.max(0.75, (currentZoom - 8) / 4));
   }, [currentZoom]);
 
-  // Calculate stem properties for nearby spots to avoid overlap
-  const stemProps = useMemo(() => {
-    if (!spots) return new Map<number, StemProps>();
-    return calculateStemProps(spots);
-  }, [spots]);
-
   // Parse URL params for target location
   const targetLocation = useMemo(() => {
     const params = new URLSearchParams(searchString);
@@ -1258,11 +1137,7 @@ export default function MapView() {
               <Marker
                 key={`webcam-${spot.id}-${currentZoom}`}
                 position={[Number(spot.latitude), Number(spot.longitude)]}
-                icon={createWebcamIcon(
-                  badgeScale,
-                  stemProps.get(spot.id)?.stemLength || 15,
-                  stemProps.get(spot.id)?.overrideDirection ?? null
-                )}
+                icon={createWebcamIcon(badgeScale)}
                 eventHandlers={{
                   click: () => setTempBadgeCoords(null),
                 }}
@@ -1321,9 +1196,7 @@ export default function MapView() {
                         spot.currentWaterTemp,
                         spot.windSpeed,
                         spot.windDirection,
-                        badgeScale,
-                        stemProps.get(spot.id)?.stemLength || 12,
-                        stemProps.get(spot.id)?.overrideDirection ?? 0
+                        badgeScale
                       )
                   }
                   eventHandlers={{
