@@ -226,8 +226,8 @@ const createWeatherBadge = (
             </div>
             <!-- Row 2: Wind Arrow + Wind Speed -->
             <div style="display: flex; align-items: center; gap: 4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
-                <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" style="transform: rotate(${arrowRotation}deg);">
+                <polygon points="12,2 6,14 12,10 18,14" fill="#64748b"/>
               </svg>
               <span style="font-size: 13px; font-weight: 700; color: #64748b;">${windText}</span>
             </div>
