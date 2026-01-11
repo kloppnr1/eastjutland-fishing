@@ -401,21 +401,8 @@ const createExpandedBadge = (
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 10px;
-            position: relative;
           ">
             <img src="${mapTileUrl}" alt="Kort" style="width: 100%; height: 100%; object-fit: cover;" />
-            <!-- Center dot marker -->
-            <div style="
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-              background: #3b82f6;
-              box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.4);
-            "></div>
           </div>
 
           <!-- Stats row -->
