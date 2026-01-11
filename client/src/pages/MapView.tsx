@@ -317,7 +317,8 @@ const createWeatherBadge = (
     `,
     iconSize: [20, 20],
     iconAnchor: [10, 15],
-    popupAnchor: [0, 5],
+    // Position popup at badge edge - popup tip touches badge top
+    popupAnchor: [0, 8],
   });
 };
 
@@ -408,7 +409,8 @@ const createWebcamIcon = (
     `,
     iconSize: [20, 20],
     iconAnchor: [10, 15],
-    popupAnchor: [0, 5],
+    // Position popup at webcam icon edge - popup tip touches icon top
+    popupAnchor: [0, 8],
   });
 };
 
