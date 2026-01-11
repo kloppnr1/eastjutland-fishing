@@ -30,7 +30,7 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
-// Create cluster icon showing count and stats - factory function
+// Create cluster icon showing count and stats - stacked badge style
 const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) => {
   const markers = cluster.getAllChildMarkers();
   const count = markers.length;
@@ -57,8 +57,6 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   const waterMax = waterTemps.length > 0 ? Math.max(...waterTemps) : null;
   const windMin = windSpeeds.length > 0 ? Math.min(...windSpeeds) : null;
   const windMax = windSpeeds.length > 0 ? Math.max(...windSpeeds) : null;
-  const windDirMin = windDirs.length > 0 ? Math.min(...windDirs) : null;
-  const windDirMax = windDirs.length > 0 ? Math.max(...windDirs) : null;
 
   // Format display values
   const waterText = waterMin != null && waterMax != null
@@ -69,74 +67,111 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
     : null;
   const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : null;
 
-  const hasStats = waterText || windText;
-  const size = hasStats ? 70 : Math.min(50, 30 + count * 3);
-
-  if (!hasStats) {
-    return divIcon({
-      html: `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          background: linear-gradient(135deg, #3b82f6 0%, #14b8a6 100%);
-          border-radius: 50%;
-          border: 3px solid white;
-          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: 800;
-          font-size: ${size * 0.4}px;
-        ">
-          ${count}
-        </div>
-      `,
-      className: "cluster-icon",
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-  }
-
   const waterColor = waterMin != null ? (waterMin < 5 ? "#3b82f6" : waterMin < 12 ? "#14b8a6" : "#f97316") : "#6b7280";
+
+  // Number of stacked cards to show (max 3)
+  const stackCount = Math.min(3, count);
+
+  // Fixed badge dimensions for consistent stacking
+  const badgeWidth = 72;
+  const badgeHeight = 56;
 
   return divIcon({
     html: `
-      <div style="
-        background: white;
-        border-radius: 8px;
-        border: 2px solid #3b82f6;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        padding: 6px 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-      ">
-        <div style="font-size: 12px; font-weight: 800; color: #3b82f6;">${count} steder</div>
-        ${waterText ? `
-          <div style="display: flex; align-items: center; gap: 3px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5">
-              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-            </svg>
-            <span style="font-size: 11px; font-weight: 700; color: ${waterColor};">${waterText}</span>
-          </div>
+      <div style="position: relative; width: 90px; height: 95px; pointer-events: none;">
+        <!-- Anchor dot -->
+        <div style="
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #3b82f6;
+          box-shadow: 0 0 0 3px white, 0 2px 6px rgba(0,0,0,0.4);
+          z-index: 10;
+        "></div>
+        <!-- Stem -->
+        <div style="
+          position: absolute;
+          bottom: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 2px;
+          height: 14px;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        "></div>
+        <!-- Stacked badges (back) -->
+        ${stackCount >= 3 ? `
+        <div style="
+          position: absolute;
+          bottom: 34px;
+          left: 50%;
+          transform: translateX(calc(-50% - 8px)) rotate(-12deg);
+          background: #9ca3af;
+          border-radius: 6px;
+          width: ${badgeWidth}px;
+          height: ${badgeHeight}px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        "></div>
         ` : ''}
-        ${windText ? `
-          <div style="display: flex; align-items: center; gap: 3px;">
-            <svg width="14" height="14" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
-              <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir != null ? avgWindDir + 180 : 0}deg);"/>
-            </svg>
-            <span style="font-size: 11px; font-weight: 700; color: #64748b;">${windText}</span>
-          </div>
+        <!-- Stacked badges (middle) -->
+        ${stackCount >= 2 ? `
+        <div style="
+          position: absolute;
+          bottom: 30px;
+          left: 50%;
+          transform: translateX(calc(-50% + 6px)) rotate(10deg);
+          background: #d1d5db;
+          border-radius: 6px;
+          width: ${badgeWidth}px;
+          height: ${badgeHeight}px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        "></div>
         ` : ''}
+        <!-- Front badge with content -->
+        <div style="
+          position: absolute;
+          bottom: 26px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          border-radius: 6px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          width: ${badgeWidth}px;
+          height: ${badgeHeight}px;
+          padding: 6px 8px;
+          box-sizing: border-box;
+          pointer-events: auto;
+          cursor: pointer;
+        ">
+          <div style="font-size: 11px; font-weight: 800; color: #3b82f6; text-align: center; margin-bottom: 4px;">${count} steder</div>
+          ${waterText ? `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
+                <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+                <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              </svg>
+              <span style="font-size: 12px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+            </div>
+          ` : ''}
+          ${windText ? `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink: 0;">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
+                <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir != null ? avgWindDir + 180 : 0}deg);"/>
+              </svg>
+              <span style="font-size: 12px; font-weight: 700; color: #64748b;">${windText}</span>
+            </div>
+          ` : ''}
+        </div>
       </div>
     `,
     className: "cluster-icon",
-    iconSize: [80, 60],
-    iconAnchor: [40, 30],
+    iconSize: [90, 95],
+    iconAnchor: [45, 95],
   });
 };
 
