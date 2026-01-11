@@ -74,44 +74,44 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   // Number of stacked cards to show (max 3)
   const stackCount = Math.min(3, count);
 
-  // Badge dimensions scaled by zoom level
-  const badgeWidth = Math.round(58 * scale);
-  const badgeHeight = Math.round(52 * scale);
+  // Badge dimensions matching fish spot badge (scaled by zoom level)
+  // Fish spot uses: padding 6px 10px, icons 16/18px, font 14px, gap 5px
   const fontSize = Math.round(14 * scale);
-  const smallFontSize = Math.round(10 * scale);
-  const iconSize = Math.round(11 * scale);
-  const dotSize = Math.round(12 * scale);
-  const stemHeight = Math.round(14 * scale);
+  const waveIconSize = Math.round(16 * scale);
+  const windIconSize = Math.round(18 * scale);
+  const iconGap = Math.round(5 * scale);
+  const rowGap = Math.round(3 * scale);
+  const paddingV = Math.round(6 * scale);
+  const paddingH = Math.round(10 * scale);
+  const dotSize = Math.round(10 * scale);
+  const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
 
   // Scaled positioning values
-  const backBottom = Math.round(34 * scale);
-  const middleBottom = Math.round(30 * scale);
-  const frontBottom = Math.round(26 * scale);
+  const badgeBottom = Math.round(27 * scale);
   const backOffset = Math.round(8 * scale);
   const middleOffset = Math.round(6 * scale);
-  const padding = Math.round(4 * scale);
 
   return divIcon({
     html: `
       <div style="position: relative; width: ${containerSize}px; height: ${containerSize}px; pointer-events: none;">
-        <!-- Anchor dot -->
+        <!-- Anchor dot at center-bottom (matching fish spot) -->
         <div style="
           position: absolute;
-          bottom: 0;
+          bottom: ${Math.round(5 * scale)}px;
           left: 50%;
           transform: translateX(-50%);
           width: ${dotSize}px;
           height: ${dotSize}px;
           border-radius: 50%;
           background: #3b82f6;
-          box-shadow: 0 0 0 ${Math.round(3 * scale)}px white, 0 2px 6px rgba(0,0,0,0.4);
+          box-shadow: 0 0 0 ${Math.round(2 * scale)}px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
         "></div>
-        <!-- Stem -->
+        <!-- Stem pointing upward (matching fish spot) -->
         <div style="
           position: absolute;
-          bottom: ${dotSize}px;
+          bottom: ${Math.round(15 * scale)}px;
           left: 50%;
           transform: translateX(-50%);
           width: ${Math.round(2 * scale)}px;
@@ -123,65 +123,67 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
         ${stackCount >= 3 ? `
         <div style="
           position: absolute;
-          bottom: ${backBottom}px;
+          bottom: ${badgeBottom + Math.round(8 * scale)}px;
           left: 50%;
           transform: translateX(calc(-50% - ${backOffset}px)) rotate(-12deg);
           background: #9ca3af;
           border-radius: ${Math.round(6 * scale)}px;
-          width: ${badgeWidth}px;
-          height: ${badgeHeight}px;
+          padding: ${paddingV}px ${paddingH}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        "></div>
+        ">
+          <div style="visibility: hidden; font-size: ${fontSize}px;">0</div>
+          <div style="visibility: hidden; height: ${waveIconSize}px;"></div>
+          <div style="visibility: hidden; height: ${windIconSize}px;"></div>
+        </div>
         ` : ''}
         <!-- Stacked badges (middle) -->
         ${stackCount >= 2 ? `
         <div style="
           position: absolute;
-          bottom: ${middleBottom}px;
+          bottom: ${badgeBottom + Math.round(4 * scale)}px;
           left: 50%;
           transform: translateX(calc(-50% + ${middleOffset}px)) rotate(10deg);
           background: #d1d5db;
           border-radius: ${Math.round(6 * scale)}px;
-          width: ${badgeWidth}px;
-          height: ${badgeHeight}px;
+          padding: ${paddingV}px ${paddingH}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        "></div>
+        ">
+          <div style="visibility: hidden; font-size: ${fontSize}px;">0</div>
+          <div style="visibility: hidden; height: ${waveIconSize}px;"></div>
+          <div style="visibility: hidden; height: ${windIconSize}px;"></div>
+        </div>
         ` : ''}
-        <!-- Front badge with content -->
+        <!-- Front badge with content (matching fish spot layout) -->
         <div style="
           position: absolute;
-          bottom: ${frontBottom}px;
+          bottom: ${badgeBottom}px;
           left: 50%;
           transform: translateX(-50%);
           background: white;
           border-radius: ${Math.round(6 * scale)}px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-          width: ${badgeWidth}px;
-          height: ${badgeHeight}px;
-          padding: ${padding}px ${Math.round(5 * scale)}px;
-          box-sizing: border-box;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+          padding: ${paddingV}px ${paddingH}px;
+          white-space: nowrap;
           pointer-events: auto;
           cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          justify-content: center;
-          gap: ${Math.round(1 * scale)}px;
         ">
-          <div style="font-size: ${fontSize}px; font-weight: 800; color: #3b82f6; text-align: center; line-height: 1.1;">${count}</div>
-          <div style="display: flex; align-items: center; gap: ${Math.round(2 * scale)}px;">
-            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
+          <!-- Count -->
+          <div style="font-size: ${fontSize}px; font-weight: 800; color: #3b82f6; text-align: center; margin-bottom: ${rowGap}px;">${count}</div>
+          <!-- Row 1: Wave + Water Temp (matching fish spot) -->
+          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px;">
+            <svg width="${waveIconSize}" height="${waveIconSize}" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: ${smallFontSize}px; font-weight: 700; color: ${waterColor}; line-height: 1;">${waterText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: ${waterColor};">${waterText}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: ${Math.round(2 * scale)}px;">
-            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" style="flex-shrink: 0;">
+          <!-- Row 2: Wind Arrow + Wind Speed (matching fish spot) -->
+          <div style="display: flex; align-items: center; gap: ${iconGap}px;">
+            <svg width="${windIconSize}" height="${windIconSize}" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
               ${hasWindData ? `<path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>` : ''}
             </svg>
-            <span style="font-size: ${smallFontSize}px; font-weight: 700; color: #64748b; line-height: 1;">${windText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: #64748b;">${windText}</span>
           </div>
         </div>
       </div>
