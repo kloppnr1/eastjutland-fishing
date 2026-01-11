@@ -10,7 +10,7 @@ test.describe('Map Badge Click Detection', () => {
     await page.waitForTimeout(2000);
   });
 
-  test('clicking on badge opens popup', async ({ page }) => {
+  test('clicking on badge expands it', async ({ page }) => {
     // Find a weather badge marker
     const badge = page.locator('.weather-badge-marker').first();
     await expect(badge).toBeVisible();
@@ -18,12 +18,16 @@ test.describe('Map Badge Click Detection', () => {
     // Click on the badge (the white box part)
     await badge.locator('div[style*="background: white"]').first().click();
 
-    // Popup should appear
-    const popup = page.locator('.leaflet-popup');
-    await expect(popup).toBeVisible({ timeout: 3000 });
+    // Expanded badge should appear
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).toBeVisible({ timeout: 3000 });
+
+    // Should show spot name and stats
+    const expandedContent = page.locator('.expanded-badge-content');
+    await expect(expandedContent).toBeVisible();
   });
 
-  test('clicking on anchor dot opens popup', async ({ page }) => {
+  test('clicking on anchor dot expands badge', async ({ page }) => {
     // Find a weather badge marker
     const badge = page.locator('.weather-badge-marker').first();
     await expect(badge).toBeVisible();
@@ -31,12 +35,12 @@ test.describe('Map Badge Click Detection', () => {
     // Click on the anchor dot (blue circle)
     await badge.locator('div[style*="background: #3b82f6"]').click();
 
-    // Popup should appear
-    const popup = page.locator('.leaflet-popup');
-    await expect(popup).toBeVisible({ timeout: 3000 });
+    // Expanded badge should appear
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).toBeVisible({ timeout: 3000 });
   });
 
-  test('clicking empty space near badge does NOT open popup', async ({ page }) => {
+  test('clicking empty space near badge does NOT expand it', async ({ page }) => {
     // Get first badge position
     const badge = page.locator('.weather-badge-marker').first();
     await expect(badge).toBeVisible();
@@ -50,9 +54,9 @@ test.describe('Map Badge Click Detection', () => {
     // Wait a moment
     await page.waitForTimeout(500);
 
-    // Popup should NOT appear (or temp badge appears instead)
-    const spotPopup = page.locator('.leaflet-popup-content:has-text("Vand")');
-    await expect(spotPopup).not.toBeVisible();
+    // Expanded badge should NOT appear
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).not.toBeVisible();
   });
 
   test('webcam badge click opens popup', async ({ page }) => {
@@ -87,60 +91,77 @@ test.describe('Map Badge Click Detection', () => {
   });
 });
 
-test.describe('Popup Positioning', () => {
+test.describe('Expanded Badge', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5000/map');
     await page.waitForSelector('.leaflet-container', { timeout: 10000 });
     await page.waitForTimeout(2000);
   });
 
-  test('popup appears above the badge, not overlapping', async ({ page }) => {
+  test('expanded badge shows spot details', async ({ page }) => {
     // Find and click a badge
     const badge = page.locator('.weather-badge-marker').first();
     await expect(badge).toBeVisible();
 
-    // Click the badge to open popup
+    // Click the badge to expand
     await badge.locator('div[style*="background: white"]').first().click();
 
-    // Wait for popup
-    const popup = page.locator('.leaflet-popup');
-    await expect(popup).toBeVisible({ timeout: 3000 });
+    // Wait for expanded badge
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).toBeVisible({ timeout: 3000 });
 
-    // Take full screenshot first
-    await page.screenshot({ path: 'test-results/popup-positioning-full.png' });
+    // Take screenshot
+    await page.screenshot({ path: 'test-results/expanded-badge.png' });
 
-    // Get bounding boxes after popup is visible
-    const badgeBox = await badge.boundingBox();
-    const popupBox = await popup.boundingBox();
-    if (!badgeBox || !popupBox) throw new Error('Badge or popup not found');
+    // Expanded badge should show stats (Vand, Luft labels)
+    const content = page.locator('.expanded-badge-content');
+    await expect(content).toContainText('Vand');
+    await expect(content).toContainText('Luft');
+  });
 
-    // Find the actual white badge box within the marker for accurate positioning
-    const badgeContent = badge.locator('div[style*="background: white"][style*="border-radius: 6px"]').first();
-    const badgeContentBox = await badgeContent.boundingBox();
+  test('clicking map closes expanded badge', async ({ page }) => {
+    // Find and click a badge to expand
+    const badge = page.locator('.weather-badge-marker').first();
+    await badge.locator('div[style*="background: white"]').first().click();
 
-    const popupBottom = popupBox.y + popupBox.height;
-    const actualBadgeTop = badgeContentBox ? badgeContentBox.y : badgeBox.y;
+    // Wait for expanded badge
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).toBeVisible({ timeout: 3000 });
 
-    console.log(`Popup bottom: ${popupBottom}, Badge top: ${actualBadgeTop}`);
-    console.log(`Gap between popup and badge: ${actualBadgeTop - popupBottom}px`);
+    // Click on empty map area
+    const map = page.locator('.leaflet-container');
+    await map.click({ position: { x: 50, y: 50 } });
+    await page.waitForTimeout(500);
 
-    // Take zoomed screenshot showing popup and badge together
-    if (badgeContentBox && popupBox) {
-      const minX = Math.min(popupBox.x, badgeContentBox.x) - 20;
-      const minY = popupBox.y - 20;
-      const maxX = Math.max(popupBox.x + popupBox.width, badgeContentBox.x + badgeContentBox.width) + 20;
-      const maxY = badgeContentBox.y + badgeContentBox.height + 40;
-      await page.screenshot({
-        path: 'test-results/popup-positioning.png',
-        clip: { x: Math.max(0, minX), y: Math.max(0, minY), width: maxX - minX, height: maxY - minY }
-      });
+    // Expanded badge should be gone, normal badges visible
+    await expect(expandedBadge).not.toBeVisible();
+    await expect(page.locator('.weather-badge-marker').first()).toBeVisible();
+  });
+
+  test('clicking different badge switches selection', async ({ page }) => {
+    // Get all badges
+    const badges = page.locator('.weather-badge-marker');
+    const count = await badges.count();
+
+    if (count < 2) {
+      test.skip();
+      return;
     }
 
-    // Popup should be reasonably positioned near the badge
-    // Allow overlap due to popup tip and badge rotation/stem variations
-    // The key is that they're visually connected, not that exact pixels match
-    expect(popupBottom).toBeLessThanOrEqual(actualBadgeTop + 60);
-    // Should not have huge gap (more than 100px would indicate broken positioning)
-    expect(actualBadgeTop - popupBottom).toBeLessThan(100);
+    // Click first badge
+    await badges.nth(0).locator('div[style*="background: white"]').first().click();
+    await page.waitForTimeout(500);
+
+    // Should have one expanded badge
+    let expandedBadges = page.locator('.expanded-badge-marker');
+    await expect(expandedBadges).toHaveCount(1);
+
+    // Click second badge
+    await badges.nth(1).locator('div[style*="background: white"]').first().click();
+    await page.waitForTimeout(500);
+
+    // Should still have one expanded badge (the second one now)
+    expandedBadges = page.locator('.expanded-badge-marker');
+    await expect(expandedBadges).toHaveCount(1);
   });
 });
