@@ -30,6 +30,7 @@ jobs:
       - name: Build static site
         env:
           VITE_STATIC_MODE: true
+          NODE_ENV: production
         run: npx vite build --outDir dist-static
 
       - name: Copy public files
