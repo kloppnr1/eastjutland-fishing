@@ -398,7 +398,7 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 }
 
 // Component to handle locate me button
-function LocateButton() {
+function LocateButton({ onLocate }: { onLocate: (lat: number, lng: number) => void }) {
   const map = useMap();
   const [locating, setLocating] = useState(false);
 
@@ -414,8 +414,12 @@ function LocateButton() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        map.flyTo([latitude, longitude], 13, { duration: 1.5 });
-        setLocating(false);
+        map.flyTo([latitude, longitude], 14, { duration: 1.5 });
+        // Show temp badge after flying
+        setTimeout(() => {
+          onLocate(latitude, longitude);
+          setLocating(false);
+        }, 1600);
       },
       (error) => {
         console.error("Geolocation error:", error);
@@ -1018,7 +1022,7 @@ export default function MapView() {
             />
             <MapClickHandler onMapClick={handleMapClick} />
             <ZoomTracker onZoomChange={setCurrentZoom} />
-            <LocateButton />
+            <LocateButton onLocate={(lat, lng) => setTempBadgeCoords({ lat, lng })} />
             {targetLocation && (
               <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
             )}
