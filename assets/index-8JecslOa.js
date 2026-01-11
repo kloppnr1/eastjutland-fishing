@@ -137,6 +137,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${m}deg);
+          pointer-events: none;
         ">
           <!-- Stem -->
           <div style="
@@ -148,6 +149,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             height: ${o}px;
             background: white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            pointer-events: none;
           "></div>
           <!-- Badge container -->
           <div style="
@@ -206,6 +208,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${r}deg);
+          pointer-events: none;
         ">
           <!-- Stem -->
           <div style="
@@ -216,6 +219,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             width: 2px;
             height: ${t}px;
             background: #7c3aed;
+            pointer-events: none;
           "></div>
           <!-- Icon container -->
           <div style="
