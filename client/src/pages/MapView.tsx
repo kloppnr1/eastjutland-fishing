@@ -305,11 +305,12 @@ const createSpotIcon = (
 };
 
 // Generate static map tile URL for a location
-const getStaticMapUrl = (lat: number, lng: number, width: number = 256, height: number = 100) => {
-  // Calculate bounding box around the point (roughly 500m)
-  const delta = 0.003; // ~300m at this latitude
-  const bbox = `${lng - delta},${lat - delta * 0.6},${lng + delta},${lat + delta * 0.6}`;
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${bbox}&bboxSR=4326&size=${width},${height}&imageSR=4326&format=jpg&f=image`;
+const getStaticMapUrl = (lat: number, lng: number) => {
+  // Calculate bounding box around the point (roughly 300m)
+  const delta = 0.002; // ~200m at this latitude for tighter zoom
+  const bbox = `${lng - delta},${lat - delta * 0.5},${lng + delta},${lat + delta * 0.5}`;
+  // Request high resolution (512x200) for retina displays
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${bbox}&bboxSR=4326&size=512,200&imageSR=4326&format=jpg&f=image`;
 };
 
 // Expanded badge when spot is selected - shows full info
@@ -334,7 +335,7 @@ const createExpandedBadge = (
   const lng = Number(spot.longitude);
 
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-  const mapTileUrl = getStaticMapUrl(lat, lng, 256, 80);
+  const mapTileUrl = getStaticMapUrl(lat, lng);
 
   return divIcon({
     className: "expanded-badge-marker",
