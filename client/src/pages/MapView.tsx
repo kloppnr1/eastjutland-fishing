@@ -210,25 +210,25 @@ const createWeatherBadge = (
             left: 50%;
             transform: translateX(-50%) rotate(${contentRotation}deg);
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            padding: 8px 12px;
-            min-width: 70px;
+            border-radius: 10px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+            padding: 10px 14px;
+            min-width: 85px;
           ">
             <!-- Row 1: Wave + Water Temp -->
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
                 <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               </svg>
-              <span style="font-size: 16px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
+              <span style="font-size: 20px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
             </div>
             <!-- Row 2: Wind Arrow + Wind Speed -->
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(${arrowRotation}deg);">
                 <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
               </svg>
-              <span style="font-size: 16px; font-weight: 700; color: #64748b;">${windText}</span>
+              <span style="font-size: 20px; font-weight: 700; color: #64748b;">${windText}</span>
             </div>
           </div>
         </div>
@@ -920,10 +920,10 @@ export default function MapView() {
   const [currentZoom, setCurrentZoom] = useState(10);
   const searchString = useSearch();
 
-  // Calculate badge scale based on zoom (smaller when zoomed out)
+  // Calculate badge scale based on zoom (keep large at all zoom levels)
   const badgeScale = useMemo(() => {
-    // At zoom 10 or below: 0.6 scale, at zoom 14+: 1.0 scale
-    return Math.min(1, Math.max(0.6, (currentZoom - 8) / 6));
+    // At zoom 8 or below: 0.85 scale, at zoom 12+: 1.0 scale
+    return Math.min(1, Math.max(0.85, (currentZoom - 8) / 4));
   }, [currentZoom]);
 
   // Calculate stem properties for nearby spots to avoid overlap
