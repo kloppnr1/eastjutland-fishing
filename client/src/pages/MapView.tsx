@@ -244,7 +244,7 @@ const createWeatherBadge = (
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <div style="position: relative; width: 100px; height: 120px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none;">
+      <div style="position: relative; width: 20px; height: 20px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none; overflow: visible;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -263,7 +263,7 @@ const createWeatherBadge = (
         <!-- Rotating badge and stem -->
         <div style="
           position: absolute;
-          bottom: 10px;
+          bottom: 15px;
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${badgeRotation}deg);
@@ -315,9 +315,9 @@ const createWeatherBadge = (
         </div>
       </div>
     `,
-    iconSize: [100, 120],
-    iconAnchor: [50, 115],
-    popupAnchor: [0, -110],
+    iconSize: [20, 20],
+    iconAnchor: [10, 15],
+    popupAnchor: [0, -100],
   });
 };
 
@@ -346,7 +346,7 @@ const createWebcamIcon = (
   return divIcon({
     className: "webcam-marker",
     html: `
-      <div style="position: relative; width: 100px; height: 120px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none;">
+      <div style="position: relative; width: 20px; height: 20px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none; overflow: visible;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -365,7 +365,7 @@ const createWebcamIcon = (
         <!-- Rotating icon and stem -->
         <div style="
           position: absolute;
-          bottom: 10px;
+          bottom: 15px;
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${rotation}deg);
@@ -406,9 +406,9 @@ const createWebcamIcon = (
         </div>
       </div>
     `,
-    iconSize: [100, 120],
-    iconAnchor: [50, 115],
-    popupAnchor: [0, -110],
+    iconSize: [20, 20],
+    iconAnchor: [10, 15],
+    popupAnchor: [0, -100],
   });
 };
 
