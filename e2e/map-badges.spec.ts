@@ -259,7 +259,7 @@ test.describe('Cluster Stacked Badges', () => {
     await expect(cluster).toContainText('steder');
   });
 
-  test('cluster shows water temperature (single value or range)', async ({ page }) => {
+  test('cluster shows water temperature (single value, range, or --)', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
 
@@ -271,30 +271,27 @@ test.describe('Cluster Stacked Badges', () => {
     const cluster = clusters.first();
     await expect(cluster).toBeVisible();
 
-    // Should have wave icon SVG (water temp indicator)
+    // Should have wave icon SVG (water temp indicator) - always visible now
     const waveIcon = cluster.locator('svg path[d*="M2 6c"]');
-    const hasWaveIcon = await waveIcon.count() > 0;
+    await expect(waveIcon.first()).toBeVisible();
 
-    // If cluster has water temp data, it should show the wave icon
-    if (hasWaveIcon) {
-      await expect(waveIcon.first()).toBeVisible();
-      // Temperature text should be either:
-      // - Single value: "5.2°" (when all spots have same temp)
-      // - Range: "5.0-6.5°" (when spots have different temps)
-      // - Should NOT be "5.2-5.2°" (duplicate values)
-      const tempText = cluster.locator('span[style*="font-weight: 700"]').first();
-      const text = await tempText.textContent();
-      // Match single temp "X.X°" or range "X.X-Y.Y°" but not duplicate "X.X-X.X°"
-      expect(text).toMatch(/^\d+\.?\d*°$|^\d+\.?\d*-\d+\.?\d*°$/);
-      // Verify it's not showing duplicate range like "5.2-5.2°"
-      const rangeMatch = text?.match(/^(\d+\.?\d*)-(\d+\.?\d*)°$/);
-      if (rangeMatch) {
-        expect(rangeMatch[1]).not.toBe(rangeMatch[2]);
-      }
+    // Temperature text should be either:
+    // - Single value: "5.2°" (when all spots have same temp)
+    // - Range: "5.0-6.5°" (when spots have different temps)
+    // - "--" (when no data available)
+    // - Should NOT be "5.2-5.2°" (duplicate values)
+    const tempText = cluster.locator('span[style*="font-weight: 700"]').first();
+    const text = await tempText.textContent();
+    // Match single temp "X.X°" or range "X.X-Y.Y°" or "--"
+    expect(text).toMatch(/^\d+\.?\d*°$|^\d+\.?\d*-\d+\.?\d*°$|^--$/);
+    // Verify it's not showing duplicate range like "5.2-5.2°"
+    const rangeMatch = text?.match(/^(\d+\.?\d*)-(\d+\.?\d*)°$/);
+    if (rangeMatch) {
+      expect(rangeMatch[1]).not.toBe(rangeMatch[2]);
     }
   });
 
-  test('cluster shows wind info (single value or range)', async ({ page }) => {
+  test('cluster shows wind info (single value, range, or --)', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
 
@@ -306,25 +303,23 @@ test.describe('Cluster Stacked Badges', () => {
     const cluster = clusters.first();
     await expect(cluster).toBeVisible();
 
-    // Should have wind compass circle SVG
+    // Should have wind compass circle SVG - always visible now
     const compassCircle = cluster.locator('svg circle[cx="12"][cy="12"]');
-    const hasWindIcon = await compassCircle.count() > 0;
+    await expect(compassCircle.first()).toBeVisible();
 
-    if (hasWindIcon) {
-      await expect(compassCircle.first()).toBeVisible();
-      // Wind text should be either single value "3" or range "3-5"
-      // Should NOT be "3-3" (duplicate)
-      const windSpans = cluster.locator('span[style*="color: #64748b"]');
-      if (await windSpans.count() > 0) {
-        const text = await windSpans.first().textContent();
-        // Match single wind "X" or range "X-Y"
-        expect(text).toMatch(/^\d+$|^\d+-\d+$/);
-        // Verify it's not showing duplicate range like "3-3"
-        const rangeMatch = text?.match(/^(\d+)-(\d+)$/);
-        if (rangeMatch) {
-          expect(rangeMatch[1]).not.toBe(rangeMatch[2]);
-        }
-      }
+    // Wind text should be either:
+    // - Single value "3" (when all spots have same wind)
+    // - Range "3-5" (when spots have different wind)
+    // - "--" (when no data available)
+    // - Should NOT be "3-3" (duplicate)
+    const windSpans = cluster.locator('span[style*="color: #64748b"]');
+    const text = await windSpans.first().textContent();
+    // Match single wind "X" or range "X-Y" or "--"
+    expect(text).toMatch(/^\d+$|^\d+-\d+$|^--$/);
+    // Verify it's not showing duplicate range like "3-3"
+    const rangeMatch = text?.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      expect(rangeMatch[1]).not.toBe(rangeMatch[2]);
     }
   });
 

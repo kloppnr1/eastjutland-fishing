@@ -58,14 +58,14 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   const windMin = windSpeeds.length > 0 ? Math.min(...windSpeeds) : null;
   const windMax = windSpeeds.length > 0 ? Math.max(...windSpeeds) : null;
 
-  // Format display values
+  // Format display values - show "--" for missing data
   const waterText = waterMin != null && waterMax != null
     ? (waterMin === waterMax ? `${waterMin.toFixed(1)}°` : `${waterMin.toFixed(1)}-${waterMax.toFixed(1)}°`)
-    : null;
+    : "--";
   const windText = windMin != null && windMax != null
     ? (windMin === windMax ? `${windMin.toFixed(0)}` : `${windMin.toFixed(0)}-${windMax.toFixed(0)}`)
-    : null;
-  const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : null;
+    : "--";
+  const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : 0;
 
   const waterColor = waterMin != null ? (waterMin < 5 ? "#3b82f6" : waterMin < 12 ? "#14b8a6" : "#f97316") : "#6b7280";
 
@@ -148,24 +148,20 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
           cursor: pointer;
         ">
           <div style="font-size: 11px; font-weight: 800; color: #3b82f6; text-align: center; margin-bottom: 4px;">${count} steder</div>
-          ${waterText ? `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
-                <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-                <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
-              </svg>
-              <span style="font-size: 12px; font-weight: 700; color: ${waterColor};">${waterText}</span>
-            </div>
-          ` : ''}
-          ${windText ? `
-            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink: 0;">
-                <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
-                <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir != null ? avgWindDir + 180 : 0}deg);"/>
-              </svg>
-              <span style="font-size: 12px; font-weight: 700; color: #64748b;">${windText}</span>
-            </div>
-          ` : ''}
+          <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
+              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+            </svg>
+            <span style="font-size: 12px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink: 0;">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>
+            </svg>
+            <span style="font-size: 12px; font-weight: 700; color: #64748b;">${windText}</span>
+          </div>
         </div>
       </div>
     `,
