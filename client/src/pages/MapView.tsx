@@ -168,12 +168,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           pointer-events: auto;
           cursor: pointer;
         ">
-          <!-- Count with map pin icon -->
-          <div style="display: flex; align-items: center; gap: ${countGap}px; margin-bottom: ${rowGap}px;">
-            <svg width="${waveIconSize}" height="${waveIconSize}" viewBox="0 0 24 24" fill="#3b82f6" stroke="#3b82f6" stroke-width="1">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-              <circle cx="12" cy="10" r="3" fill="white" stroke="white"/>
-            </svg>
+          <!-- Count in subtle pill -->
+          <div style="background: #eff6ff; border-radius: ${Math.round(4 * scale)}px; padding: ${Math.round(2 * scale)}px ${Math.round(6 * scale)}px; margin-bottom: ${rowGap}px; text-align: center;">
             <span style="font-size: ${fontSize}px; font-weight: 700; color: #3b82f6;">${count}</span>
           </div>
           <!-- Row 1: Wave + Water Temp (matching fish spot) -->
