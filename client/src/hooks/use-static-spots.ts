@@ -4,7 +4,7 @@ import { BUNDLED_SPOTS } from "@/data/spots";
 
 const USER_SPOTS_KEY = "ostjylland-user-spots";
 const WEATHER_TILE_CACHE_KEY = "ostjylland-weather-tiles";
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 const TILE_SIZE = 0.1; // ~11km tiles (0.1 degrees)
 const REQUEST_DELAY = 300; // 300ms between API requests
 
