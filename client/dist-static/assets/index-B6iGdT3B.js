@@ -137,8 +137,9 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             </div>
             <!-- Row 2: Wind Arrow + Wind Speed -->
             <div style="display: flex; align-items: center; gap: 4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" style="transform: rotate(${x}deg);">
-                <polygon points="12,2 6,14 12,10 18,14" fill="#64748b"/>
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
+                <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${x}deg);"/>
               </svg>
               <span style="font-size: 13px; font-weight: 700; color: #64748b;">${d}</span>
             </div>
