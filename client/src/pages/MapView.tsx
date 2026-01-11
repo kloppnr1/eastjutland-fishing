@@ -214,7 +214,7 @@ const createWeatherBadge = (
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             padding: 5px 8px;
-            min-width: 50px;
+            white-space: nowrap;
           ">
             <!-- Row 1: Wave + Water Temp -->
             <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
