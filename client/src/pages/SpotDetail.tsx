@@ -9,6 +9,115 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { resolveImageUrl } from "@/lib/image-url";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceLine } from "recharts";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { divIcon } from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Custom marker icon for map preview
+const createSpotMarkerIcon = () => {
+  return divIcon({
+    className: "spot-preview-marker",
+    html: `
+      <div style="position: relative; width: 40px; height: 40px;">
+        <div style="
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #3b82f6;
+          box-shadow: 0 0 0 3px white, 0 2px 8px rgba(0,0,0,0.4);
+        "></div>
+        <div style="
+          position: absolute;
+          bottom: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 3px;
+          height: 16px;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        "></div>
+        <div style="
+          position: absolute;
+          bottom: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #3b82f6;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+        ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+      </div>
+    `,
+    iconSize: [40, 52],
+    iconAnchor: [20, 52],
+  });
+};
+
+// Mini map component showing spot location
+function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="bg-card rounded-3xl p-8 shadow-xl border border-border/50"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-display font-bold flex items-center">
+          <MapPin className="w-6 h-6 text-primary mr-3" />
+          Placering
+        </h2>
+        <Link
+          href={`/map?lat=${lat}&lng=${lng}`}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-sm font-medium transition-colors"
+        >
+          Åbn kort
+        </Link>
+      </div>
+      <div className="h-64 rounded-xl overflow-hidden">
+        <MapContainer
+          center={[lat, lng]}
+          zoom={13}
+          zoomControl={false}
+          dragging={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          attributionControl={false}
+          style={{ height: "100%", width: "100%" }}
+          className="z-0"
+        >
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+          <TileLayer
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            pane="overlayPane"
+          />
+          <Marker
+            position={[lat, lng]}
+            icon={createSpotMarkerIcon()}
+          />
+        </MapContainer>
+      </div>
+      <p className="text-sm text-muted-foreground mt-3 text-center">
+        {lat.toFixed(4)}°N, {lng.toFixed(4)}°Ø
+      </p>
+    </motion.div>
+  );
+}
 
 // Webcam component that handles both iframe and image webcams, with optional timelapse video
 function WebcamSection({ webcamUrl, timelapseUrl, spotName }: { webcamUrl: string; timelapseUrl?: string | null; spotName: string }) {
@@ -310,6 +419,15 @@ export default function SpotDetail() {
               </p>
             </motion.div>
           )}
+
+          {/* Mini Map for webcam */}
+          <div className="mt-8">
+            <MiniMap
+              lat={Number(spot.latitude)}
+              lng={Number(spot.longitude)}
+              name={spot.name}
+            />
+          </div>
         </div>
       </div>
     );
@@ -524,6 +642,13 @@ export default function SpotDetail() {
                 </div>
               )}
             </motion.div>
+
+            {/* Mini Map */}
+            <MiniMap
+              lat={Number(spot.latitude)}
+              lng={Number(spot.longitude)}
+              name={spot.name}
+            />
 
           </div>
 
