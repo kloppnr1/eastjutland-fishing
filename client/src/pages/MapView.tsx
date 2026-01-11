@@ -73,12 +73,12 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   const stackCount = Math.min(3, count);
 
   // Fixed badge dimensions for consistent stacking
-  const badgeWidth = 72;
-  const badgeHeight = 56;
+  const badgeWidth = 80;
+  const badgeHeight = 62;
 
   return divIcon({
     html: `
-      <div style="position: relative; width: 90px; height: 95px; pointer-events: none;">
+      <div style="position: relative; width: 100px; height: 100px; pointer-events: none;">
         <!-- Anchor dot -->
         <div style="
           position: absolute;
@@ -142,32 +142,36 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
           width: ${badgeWidth}px;
           height: ${badgeHeight}px;
-          padding: 6px 8px;
+          padding: 5px 6px;
           box-sizing: border-box;
           pointer-events: auto;
           cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 2px;
         ">
-          <div style="font-size: 11px; font-weight: 800; color: #3b82f6; text-align: center; margin-bottom: 4px;">${count} steder</div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
+          <div style="font-size: 11px; font-weight: 800; color: #3b82f6; text-align: center;">${count} steder</div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: 12px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+            <span style="font-size: 11px; font-weight: 700; color: ${waterColor};">${waterText}</span>
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink: 0;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" style="flex-shrink: 0;">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
               <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>
             </svg>
-            <span style="font-size: 12px; font-weight: 700; color: #64748b;">${windText}</span>
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">${windText}</span>
           </div>
         </div>
       </div>
     `,
     className: "cluster-icon",
-    iconSize: [90, 95],
-    iconAnchor: [45, 95],
+    iconSize: [100, 100],
+    iconAnchor: [50, 100],
   });
 };
 
