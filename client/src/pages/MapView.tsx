@@ -163,7 +163,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         "></div>
         ` : ''}
-        <!-- Front badge with content (fixed width) -->
+        <!-- Front badge with content (fixed width and height to match stacked badges) -->
         <div style="
           position: absolute;
           bottom: ${badgeBottom}px;
@@ -174,30 +174,31 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           box-shadow: 0 2px 6px rgba(0,0,0,0.25);
           padding: ${paddingV}px ${paddingH}px;
           width: ${badgeWidth}px;
+          height: ${badgeHeight}px;
           box-sizing: border-box;
           white-space: nowrap;
           pointer-events: auto;
           cursor: pointer;
         ">
           <!-- Count in pill (fixed width, centered) -->
-          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${countPillPadding}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px;">
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: white;">${count}</span>
+          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${countPillPadding}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px; height: ${countPillHeight}px; box-sizing: border-box;">
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: white; line-height: 1;">${count}</span>
           </div>
           <!-- Row 1: Wave + Water Temp (matching fish spot) -->
-          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px;">
+          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px; height: ${waterRowHeight}px;">
             <svg width="${waveIconSize}" height="${waveIconSize}" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: ${waterColor}; line-height: 1;">${waterText}</span>
           </div>
           <!-- Row 2: Wind Arrow + Wind Speed (matching fish spot) -->
-          <div style="display: flex; align-items: center; gap: ${iconGap}px;">
+          <div style="display: flex; align-items: center; gap: ${iconGap}px; height: ${windRowHeight}px;">
             <svg width="${windIconSize}" height="${windIconSize}" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
               ${hasWindData ? `<path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>` : ''}
             </svg>
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: #64748b;">${windText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: #64748b; line-height: 1;">${windText}</span>
           </div>
         </div>
       </div>

@@ -557,11 +557,20 @@ test.describe('Cluster Stacked Badges', () => {
       const spotCount = countMatch ? parseInt(countMatch[1]) : 0;
 
       if (spotCount >= 2) {
-        // Get front badge (white background, no rotation)
+        // Get front badge (white background)
         const frontBadge = cluster.locator('div[style*="background: white"][style*="border-radius"]').first();
-        const frontBox = await frontBadge.boundingBox();
+        const frontStyle = await frontBadge.getAttribute('style');
 
-        if (!frontBox) continue;
+        if (!frontStyle) continue;
+
+        // Parse width and height from inline style
+        const frontWidthMatch = frontStyle.match(/width:\s*(\d+(?:\.\d+)?)px/);
+        const frontHeightMatch = frontStyle.match(/height:\s*(\d+(?:\.\d+)?)px/);
+
+        if (!frontWidthMatch || !frontHeightMatch) continue;
+
+        const frontWidth = parseFloat(frontWidthMatch[1]);
+        const frontHeight = parseFloat(frontHeightMatch[1]);
 
         // Get stacked cards (have rotation transform)
         const stackedCards = cluster.locator('div[style*="rotate"]');
@@ -572,18 +581,21 @@ test.describe('Cluster Stacked Badges', () => {
 
           for (let j = 0; j < stackedCount; j++) {
             const stackedCard = stackedCards.nth(j);
-            const stackedBox = await stackedCard.boundingBox();
+            const stackedStyle = await stackedCard.getAttribute('style');
 
-            if (stackedBox) {
-              // Stacked cards should be similar size to front badge (within 20% tolerance)
-              // This catches the bug where stacked cards were too small due to mismatched hidden content
-              const heightRatio = stackedBox.height / frontBox.height;
-              const widthRatio = stackedBox.width / frontBox.width;
+            if (stackedStyle) {
+              // Parse width and height from inline style
+              const stackedWidthMatch = stackedStyle.match(/width:\s*(\d+(?:\.\d+)?)px/);
+              const stackedHeightMatch = stackedStyle.match(/height:\s*(\d+(?:\.\d+)?)px/);
 
-              expect(heightRatio).toBeGreaterThan(0.8);
-              expect(heightRatio).toBeLessThan(1.2);
-              expect(widthRatio).toBeGreaterThan(0.8);
-              expect(widthRatio).toBeLessThan(1.2);
+              if (stackedWidthMatch && stackedHeightMatch) {
+                const stackedWidth = parseFloat(stackedWidthMatch[1]);
+                const stackedHeight = parseFloat(stackedHeightMatch[1]);
+
+                // Stacked cards should have exactly the same CSS width and height as front badge
+                expect(stackedWidth).toBe(frontWidth);
+                expect(stackedHeight).toBe(frontHeight);
+              }
             }
           }
           break;
