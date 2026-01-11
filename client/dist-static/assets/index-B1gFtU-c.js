@@ -114,7 +114,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
         `:""}
       </div>
     `,className:"cluster-icon",iconSize:[80,60],iconAnchor:[40,30]})};function xde(e){const t=new Map;if(e.length===0)return t;const n=[0,45,90,135,180,225,270,315],r=[15,40,65,90];for(const i of e){const o=parseFloat(i.latitude),a=parseFloat(i.longitude),u=[];for(const f of e){if(f.id===i.id)continue;const d=Math.sqrt(Math.pow(o-parseFloat(f.latitude),2)+Math.pow(a-parseFloat(f.longitude),2));d<.15&&u.push({id:f.id,distance:d})}if(u.sort((f,d)=>f.distance-d.distance),u.length===0)t.set(i.id,{stemLength:15,overrideDirection:null});else{let f=0;for(const S of u)S.id<i.id&&f++;const d=f%n.length,p=Math.floor(f/n.length)%r.length,m=u[0]?.distance||1;let v=n[d],x=r[p];m<.03&&(v=i.id%4*90+45,x=r[i.id%r.length]),t.set(i.id,{stemLength:x,overrideDirection:v})}}return t}const bde=(e,t,n,r,i=1,o=12,a=null)=>{const u=e===null?"#6b7280":e<5?"#3b82f6":e<12?"#14b8a6":"#f97316",f=e!=null?e.toFixed(1):"--",d=t!=null?t.toFixed(0):"--",p=a??r,m=p!=null?p+180:0,v=-m,x=n!=null?n+180:0;return Ar.divIcon({className:"weather-badge-marker",html:`
-      <div style="position: relative; width: 100px; height: 100px; transform: scale(${i}); transform-origin: center bottom;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${i}); transform-origin: center bottom; pointer-events: none;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -127,6 +127,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           background: #3b82f6;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
+          pointer-events: auto;
+          cursor: pointer;
         "></div>
         <!-- Rotating badge and stem -->
         <div style="
@@ -158,6 +160,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             padding: 6px 10px;
             white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
           ">
             <!-- Row 1: Wave + Water Temp -->
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
@@ -179,7 +183,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
         </div>
       </div>
     `,iconSize:[100,100],iconAnchor:[50,95],popupAnchor:[0,-95]})},wde=(e,t,n,r,i=1,o=12,a=null)=>bde(e,t,n,r,i,o,a),Sde=(e=1,t=15,n=null)=>{const r=n??0,i=-r;return Ar.divIcon({className:"webcam-marker",html:`
-      <div style="position: relative; width: 100px; height: 100px; transform: scale(${e}); transform-origin: center bottom;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${e}); transform-origin: center bottom; pointer-events: none;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -192,6 +196,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           background: #7c3aed;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
+          pointer-events: auto;
+          cursor: pointer;
         "></div>
         <!-- Rotating icon and stem -->
         <div style="
@@ -225,6 +231,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
             align-items: center;
             justify-content: center;
             color: white;
+            pointer-events: auto;
+            cursor: pointer;
           ">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>

@@ -244,7 +244,7 @@ const createWeatherBadge = (
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -257,6 +257,8 @@ const createWeatherBadge = (
           background: #3b82f6;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
+          pointer-events: auto;
+          cursor: pointer;
         "></div>
         <!-- Rotating badge and stem -->
         <div style="
@@ -288,6 +290,8 @@ const createWeatherBadge = (
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             padding: 6px 10px;
             white-space: nowrap;
+            pointer-events: auto;
+            cursor: pointer;
           ">
             <!-- Row 1: Wave + Water Temp -->
             <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
@@ -340,7 +344,7 @@ const createWebcamIcon = (
   return divIcon({
     className: "webcam-marker",
     html: `
-      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -353,6 +357,8 @@ const createWebcamIcon = (
           background: #7c3aed;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
+          pointer-events: auto;
+          cursor: pointer;
         "></div>
         <!-- Rotating icon and stem -->
         <div style="
@@ -386,6 +392,8 @@ const createWebcamIcon = (
             align-items: center;
             justify-content: center;
             color: white;
+            pointer-events: auto;
+            cursor: pointer;
           ">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
