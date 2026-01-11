@@ -357,6 +357,63 @@ test.describe('Cluster Stacked Badges', () => {
     }
   });
 
+  test('stacked badges have same size as front badge', async ({ page }) => {
+    const clusters = page.locator('.cluster-icon');
+    const count = await clusters.count();
+
+    if (count === 0) {
+      test.skip();
+      return;
+    }
+
+    // Find a cluster with stacked cards (needs 2+ spots for middle card, 3+ for back card)
+    let foundStackedCluster = false;
+    for (let i = 0; i < count; i++) {
+      const cluster = clusters.nth(i);
+      const text = await cluster.textContent();
+      const countMatch = text?.match(/(\d+)/);
+      const spotCount = countMatch ? parseInt(countMatch[1]) : 0;
+
+      if (spotCount >= 2) {
+        // Get front badge (white background, no rotation)
+        const frontBadge = cluster.locator('div[style*="background: white"][style*="border-radius"]').first();
+        const frontBox = await frontBadge.boundingBox();
+
+        if (!frontBox) continue;
+
+        // Get stacked cards (have rotation transform)
+        const stackedCards = cluster.locator('div[style*="rotate"]');
+        const stackedCount = await stackedCards.count();
+
+        if (stackedCount > 0) {
+          foundStackedCluster = true;
+
+          for (let j = 0; j < stackedCount; j++) {
+            const stackedCard = stackedCards.nth(j);
+            const stackedBox = await stackedCard.boundingBox();
+
+            if (stackedBox) {
+              // Stacked cards should be similar size to front badge (within 20% tolerance)
+              // This catches the bug where stacked cards were too small due to mismatched hidden content
+              const heightRatio = stackedBox.height / frontBox.height;
+              const widthRatio = stackedBox.width / frontBox.width;
+
+              expect(heightRatio).toBeGreaterThan(0.8);
+              expect(heightRatio).toBeLessThan(1.2);
+              expect(widthRatio).toBeGreaterThan(0.8);
+              expect(widthRatio).toBeLessThan(1.2);
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    if (!foundStackedCluster) {
+      test.skip();
+    }
+  });
+
   test('clicking cluster zooms in', async ({ page }) => {
     // Dismiss any temp badge that may have appeared from zooming
     const tempBadge = page.locator('.clicked-location-marker');
