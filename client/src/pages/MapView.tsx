@@ -82,25 +82,27 @@ function calculateStemProps(
   const stemProps = new Map<number, StemProps>();
   const fishingSpots = spots.filter(s => s.spotType !== "webcam");
 
+  // Aggressive detection radius: ~6km (0.06 degrees) to catch more potential overlaps
+  const NEARBY_THRESHOLD = 0.06;
+
   // For each spot, find nearby spots
   for (const spot of fishingSpots) {
     const lat = parseFloat(spot.latitude);
     const lng = parseFloat(spot.longitude);
 
-    // Find all nearby spots (including self)
-    const nearbySpots: typeof fishingSpots = [];
+    // Find all nearby spots (including self) with their distances
+    const nearbySpots: Array<{ spot: typeof fishingSpots[0]; distance: number }> = [];
 
     for (const other of fishingSpots) {
       const otherLat = parseFloat(other.latitude);
       const otherLng = parseFloat(other.longitude);
 
-      // Check if within ~2km (roughly 0.02 degrees)
       const distance = Math.sqrt(
         Math.pow(lat - otherLat, 2) + Math.pow(lng - otherLng, 2)
       );
 
-      if (distance < 0.025) {
-        nearbySpots.push(other);
+      if (distance < NEARBY_THRESHOLD) {
+        nearbySpots.push({ spot: other, distance });
       }
     }
 
@@ -108,18 +110,19 @@ function calculateStemProps(
     if (nearbySpots.length <= 1) {
       stemProps.set(spot.id, { stemLength: baseLength, overrideDirection: null });
     } else {
-      // Find this spot's index in the nearby group (sorted by id for consistency)
-      nearbySpots.sort((a, b) => a.id - b.id);
-      const myIndex = nearbySpots.findIndex(s => s.id === spot.id);
+      // Sort by id for consistency
+      nearbySpots.sort((a, b) => a.spot.id - b.spot.id);
+      const myIndex = nearbySpots.findIndex(s => s.spot.id === spot.id);
       const total = nearbySpots.length;
 
-      // Assign stem length: vary between 12, 27, 42
-      const lengthLevel = myIndex % 3;
+      // More aggressive stem length variation: 12, 27, 42, 57
+      const lengthLevel = myIndex % 4;
       const stemLength = baseLength + lengthLevel * 15;
 
-      // Assign direction: spread evenly around the compass
-      // Each spot gets a direction offset from 0
-      const directionOffset = (360 / total) * myIndex;
+      // Spread directions evenly around compass, starting from 45° for better visibility
+      // This ensures badges point in different directions
+      const baseAngle = 45; // Start from NE direction
+      const directionOffset = baseAngle + (360 / total) * myIndex;
       const overrideDirection = Math.round(directionOffset) % 360;
 
       stemProps.set(spot.id, { stemLength, overrideDirection });
