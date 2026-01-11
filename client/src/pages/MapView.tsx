@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "re
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
-import { Loader2, Navigation, Video } from "lucide-react";
+import { Loader2, Navigation, Video, LocateFixed } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 // Auto-refreshing webcam image component
@@ -395,6 +395,49 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   }, [map, onZoomChange]);
 
   return null;
+}
+
+// Component to handle locate me button
+function LocateButton() {
+  const map = useMap();
+  const [locating, setLocating] = useState(false);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation understøttes ikke af din browser");
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        map.flyTo([latitude, longitude], 13, { duration: 1.5 });
+        setLocating(false);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        alert("Kunne ikke finde din placering");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  return (
+    <button
+      onClick={handleLocate}
+      disabled={locating}
+      className="absolute bottom-6 right-6 z-[1000] bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+      title="Find min placering"
+    >
+      {locating ? (
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      ) : (
+        <LocateFixed className="w-6 h-6 text-primary" />
+      )}
+    </button>
+  );
 }
 
 // Helper to convert wind direction degrees to compass direction
@@ -972,6 +1015,7 @@ export default function MapView() {
             />
             <MapClickHandler onMapClick={handleMapClick} />
             <ZoomTracker onZoomChange={setCurrentZoom} />
+            <LocateButton />
             {targetLocation && (
               <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
             )}
