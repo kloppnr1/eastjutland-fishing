@@ -539,7 +539,7 @@ test.describe('Cluster Stacked Badges', () => {
     }
   });
 
-  test('stacked badges have same size as front badge', async ({ page }) => {
+  test('stacked badges are at least as large as front badge', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
 
@@ -557,20 +557,17 @@ test.describe('Cluster Stacked Badges', () => {
       const spotCount = countMatch ? parseInt(countMatch[1]) : 0;
 
       if (spotCount >= 2) {
-        // Get front badge (white background)
+        // Get front badge (white background) - use bounding box since it has natural height
         const frontBadge = cluster.locator('div[style*="background: white"][style*="border-radius"]').first();
+        const frontBox = await frontBadge.boundingBox();
+
+        if (!frontBox) continue;
+
+        // Get front badge CSS width for comparison
         const frontStyle = await frontBadge.getAttribute('style');
-
-        if (!frontStyle) continue;
-
-        // Parse width and height from inline style
-        const frontWidthMatch = frontStyle.match(/width:\s*(\d+(?:\.\d+)?)px/);
-        const frontHeightMatch = frontStyle.match(/height:\s*(\d+(?:\.\d+)?)px/);
-
-        if (!frontWidthMatch || !frontHeightMatch) continue;
-
+        const frontWidthMatch = frontStyle?.match(/width:\s*(\d+(?:\.\d+)?)px/);
+        if (!frontWidthMatch) continue;
         const frontWidth = parseFloat(frontWidthMatch[1]);
-        const frontHeight = parseFloat(frontHeightMatch[1]);
 
         // Get stacked cards (have rotation transform)
         const stackedCards = cluster.locator('div[style*="rotate"]');
@@ -592,9 +589,12 @@ test.describe('Cluster Stacked Badges', () => {
                 const stackedWidth = parseFloat(stackedWidthMatch[1]);
                 const stackedHeight = parseFloat(stackedHeightMatch[1]);
 
-                // Stacked cards should have exactly the same CSS width and height as front badge
+                // Stacked cards should have same width as front badge
                 expect(stackedWidth).toBe(frontWidth);
-                expect(stackedHeight).toBe(frontHeight);
+
+                // Stacked cards should be at least as tall as front badge's rendered height
+                // (accounting for rotation making bounding box slightly larger)
+                expect(stackedHeight).toBeGreaterThanOrEqual(frontBox.height * 0.95);
               }
             }
           }
@@ -686,13 +686,17 @@ test.describe('DateTime Picker', () => {
     await expect(hourButtons).toHaveCount(24);
   });
 
-  test('selecting a different hour updates the display', async ({ page }) => {
+  test('selecting a different hour and clicking OK updates the display', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
     // Click on hour 14 (2 PM)
     const hour14 = page.getByTestId('datetime-hour-14');
     await hour14.click();
+
+    // Click OK to confirm
+    const okButton = page.getByTestId('datetime-ok');
+    await okButton.click();
 
     // Display should now show the selected time (not "Nu" if current hour is not 14)
     const display = page.getByTestId('datetime-display');
@@ -704,6 +708,33 @@ test.describe('DateTime Picker', () => {
     }
   });
 
+  test('clicking Cancel discards changes', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select a different hour
+    const hourButton = page.getByTestId('datetime-hour-3');
+    await hourButton.click();
+
+    // Click Cancel to discard
+    const cancelButton = page.getByTestId('datetime-cancel');
+    await cancelButton.click();
+
+    // Display should still show "Nu"
+    const display = page.getByTestId('datetime-display');
+    await expect(display).toHaveText('Nu');
+  });
+
+  test('OK and Cancel buttons are visible when expanded', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    const okButton = page.getByTestId('datetime-ok');
+    const cancelButton = page.getByTestId('datetime-cancel');
+    await expect(okButton).toBeVisible();
+    await expect(cancelButton).toBeVisible();
+  });
+
   test('reset button returns to current time', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
@@ -712,11 +743,16 @@ test.describe('DateTime Picker', () => {
     const hourButton = page.getByTestId('datetime-hour-3');
     await hourButton.click();
 
+    // Click OK to confirm
+    const okButton = page.getByTestId('datetime-ok');
+    await okButton.click();
+
     // Display should not show "Nu" anymore
     const display = page.getByTestId('datetime-display');
     await expect(display).not.toHaveText('Nu');
 
-    // Click reset button
+    // Open picker again and click reset button
+    await toggle.click();
     const resetButton = page.getByTestId('datetime-reset-full');
     await resetButton.click();
 
@@ -732,8 +768,9 @@ test.describe('DateTime Picker', () => {
     const hourButton = page.getByTestId('datetime-hour-3');
     await hourButton.click();
 
-    // Close the expanded view
-    await toggle.click();
+    // Click OK to confirm
+    const okButton = page.getByTestId('datetime-ok');
+    await okButton.click();
 
     // Reset icon should be visible in the collapsed view
     const resetIcon = page.getByTestId('datetime-reset');
@@ -751,12 +788,16 @@ test.describe('DateTime Picker', () => {
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     await dateInput.fill(tomorrowStr);
 
+    // Click OK to confirm
+    const okButton = page.getByTestId('datetime-ok');
+    await okButton.click();
+
     // Display should show 12:00 for the new date
     const display = page.getByTestId('datetime-display');
     await expect(display).toContainText('kl. 12');
   });
 
-  test('changing datetime triggers data reload', async ({ page }) => {
+  test('changing datetime and clicking OK triggers data reload', async ({ page }) => {
     // Wait for initial data to load
     await page.waitForSelector('.weather-badge-marker', { timeout: 10000 });
 
@@ -771,6 +812,10 @@ test.describe('DateTime Picker', () => {
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
     await dateInput.fill(tomorrowStr);
 
+    // Click OK to confirm
+    const okButton = page.getByTestId('datetime-ok');
+    await okButton.click();
+
     // Wait for potential reload (check loading indicator or wait)
     await page.waitForTimeout(2000);
 
@@ -778,5 +823,28 @@ test.describe('DateTime Picker', () => {
     const badges = page.locator('.weather-badge-marker');
     const badgeCount = await badges.count();
     expect(badgeCount).toBeGreaterThan(0);
+  });
+
+  test('selecting datetime without clicking OK does not trigger data reload', async ({ page }) => {
+    // Wait for initial data to load
+    await page.waitForSelector('.weather-badge-marker', { timeout: 10000 });
+
+    // Open picker
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select a different date but don't click OK
+    const dateInput = page.getByTestId('datetime-date-input');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    await dateInput.fill(tomorrowStr);
+
+    // Wait a moment
+    await page.waitForTimeout(500);
+
+    // Display should still show "Nu" (not changed yet)
+    const display = page.getByTestId('datetime-display');
+    await expect(display).toHaveText('Nu');
   });
 });

@@ -101,11 +101,13 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   // Width accommodates: water "10.5-12.3°" and wind "10-15" without wrapping
   const badgeWidth = Math.round(95 * scale);
 
-  // Calculate badge height from actual content to ensure stacked badges match
-  // Height = paddingV*2 + countPill + rowGap + waterRow + rowGap + windRow
-  const countPillHeight = countPillPadding * 2 + fontSize;
-  const waterRowHeight = Math.max(waveIconSize, fontSize);
-  const windRowHeight = Math.max(windIconSize, fontSize);
+  // Calculate stacked badge height to match front badge's natural rendered size
+  // Account for browser line-height (~1.4-1.5x font-size) which makes text taller
+  const lineHeightFactor = 1.5;
+  const textHeight = Math.ceil(fontSize * lineHeightFactor);
+  const countPillHeight = countPillPadding * 2 + textHeight;
+  const waterRowHeight = Math.max(waveIconSize, textHeight);
+  const windRowHeight = Math.max(windIconSize, textHeight);
   const badgeHeight = paddingV * 2 + countPillHeight + rowGap + waterRowHeight + rowGap + windRowHeight;
 
   return divIcon({
@@ -163,7 +165,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         "></div>
         ` : ''}
-        <!-- Front badge with content (fixed width and height to match stacked badges) -->
+        <!-- Front badge with content (natural height, stacked badges sized to match) -->
         <div style="
           position: absolute;
           bottom: ${badgeBottom}px;
@@ -174,31 +176,30 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           box-shadow: 0 2px 6px rgba(0,0,0,0.25);
           padding: ${paddingV}px ${paddingH}px;
           width: ${badgeWidth}px;
-          height: ${badgeHeight}px;
           box-sizing: border-box;
           white-space: nowrap;
           pointer-events: auto;
           cursor: pointer;
         ">
           <!-- Count in pill (fixed width, centered) -->
-          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${countPillPadding}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px; height: ${countPillHeight}px; box-sizing: border-box;">
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: white; line-height: 1;">${count}</span>
+          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${countPillPadding}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px;">
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: white;">${count}</span>
           </div>
           <!-- Row 1: Wave + Water Temp (matching fish spot) -->
-          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px; height: ${waterRowHeight}px;">
+          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px;">
             <svg width="${waveIconSize}" height="${waveIconSize}" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: ${waterColor}; line-height: 1;">${waterText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: ${waterColor};">${waterText}</span>
           </div>
           <!-- Row 2: Wind Arrow + Wind Speed (matching fish spot) -->
-          <div style="display: flex; align-items: center; gap: ${iconGap}px; height: ${windRowHeight}px;">
+          <div style="display: flex; align-items: center; gap: ${iconGap}px;">
             <svg width="${windIconSize}" height="${windIconSize}" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
               ${hasWindData ? `<path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>` : ''}
             </svg>
-            <span style="font-size: ${fontSize}px; font-weight: 700; color: #64748b; line-height: 1;">${windText}</span>
+            <span style="font-size: ${fontSize}px; font-weight: 700; color: #64748b;">${windText}</span>
           </div>
         </div>
       </div>
@@ -1135,19 +1136,24 @@ function DateTimePicker({
   onReset: () => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  // Pending datetime while user is selecting (not yet confirmed)
+  const [pendingDateTime, setPendingDateTime] = useState<Date | null>(null);
+
+  // The datetime to display in the picker (pending if editing, otherwise selected)
+  const displayedDateTime = pendingDateTime ?? selectedDateTime;
 
   // Format date for input (YYYY-MM-DD)
   const dateValue = useMemo(() => {
-    const year = selectedDateTime.getFullYear();
-    const month = String(selectedDateTime.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDateTime.getDate()).padStart(2, '0');
+    const year = displayedDateTime.getFullYear();
+    const month = String(displayedDateTime.getMonth() + 1).padStart(2, '0');
+    const day = String(displayedDateTime.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }, [selectedDateTime]);
+  }, [displayedDateTime]);
 
   // Format time for display (HH:00)
   const timeValue = useMemo(() => {
-    return String(selectedDateTime.getHours()).padStart(2, '0');
-  }, [selectedDateTime]);
+    return String(displayedDateTime.getHours()).padStart(2, '0');
+  }, [displayedDateTime]);
 
   // Check if selected time is current hour (for showing reset button)
   const isCurrentHour = useMemo(() => {
@@ -1158,7 +1164,7 @@ function DateTimePicker({
            selectedDateTime.getHours() === now.getHours();
   }, [selectedDateTime]);
 
-  // Format display text
+  // Format display text (always shows confirmed selection, not pending)
   const displayText = useMemo(() => {
     if (isCurrentHour) return "Nu";
     const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
@@ -1169,19 +1175,40 @@ function DateTimePicker({
     return `${dayName} ${day}/${month} kl. ${hour}`;
   }, [selectedDateTime, isCurrentHour]);
 
+  // Initialize pending state when expanding
+  const handleToggle = () => {
+    if (!isExpanded) {
+      setPendingDateTime(new Date(selectedDateTime));
+    }
+    setIsExpanded(!isExpanded);
+  };
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [year, month, day] = e.target.value.split('-').map(Number);
-    const newDate = new Date(selectedDateTime);
+    const newDate = new Date(displayedDateTime);
     newDate.setFullYear(year, month - 1, day);
     // Default to 12:00 when selecting a new date
     newDate.setHours(12, 0, 0, 0);
-    onChange(newDate);
+    setPendingDateTime(newDate);
   };
 
   const handleHourChange = (hour: number) => {
-    const newDate = new Date(selectedDateTime);
+    const newDate = new Date(displayedDateTime);
     newDate.setHours(hour, 0, 0, 0);
-    onChange(newDate);
+    setPendingDateTime(newDate);
+  };
+
+  const handleConfirm = () => {
+    if (pendingDateTime) {
+      onChange(pendingDateTime);
+    }
+    setPendingDateTime(null);
+    setIsExpanded(false);
+  };
+
+  const handleCancel = () => {
+    setPendingDateTime(null);
+    setIsExpanded(false);
   };
 
   // Generate hour options
@@ -1192,7 +1219,7 @@ function DateTimePicker({
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* Collapsed view - just shows current selection */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={handleToggle}
           className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2 hover:bg-gray-50 transition-colors w-full"
           data-testid="datetime-toggle"
         >
@@ -1249,10 +1276,29 @@ function DateTimePicker({
               </div>
             </div>
 
+            {/* OK and Cancel buttons */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={handleCancel}
+                className="flex-1 py-2.5 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                data-testid="datetime-cancel"
+              >
+                Annuller
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="flex-1 py-2.5 text-sm text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors font-medium"
+                data-testid="datetime-ok"
+              >
+                OK
+              </button>
+            </div>
+
             {/* Reset button */}
             <button
               onClick={() => {
                 onReset();
+                setPendingDateTime(null);
                 setIsExpanded(false);
               }}
               className="w-full py-2.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
