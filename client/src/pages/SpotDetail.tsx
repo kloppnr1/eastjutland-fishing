@@ -419,36 +419,24 @@ export default function SpotDetail() {
     <div className="min-h-screen bg-background flex flex-col pb-20">
       <Header />
 
-      {/* Detail Hero */}
-      <div className="relative h-[60vh] min-h-[400px] bg-primary/10 overflow-hidden">
-        {spot.imageUrl ? (
-          <img
-            src={resolveImageUrl(spot.imageUrl) || undefined}
-            alt={spot.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-900 to-slate-800 flex items-center justify-center">
-            <Fish className="w-32 h-32 text-white/10" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-
-        <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 z-20">
-          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white transition-colors bg-black/20 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
+      {/* Back button bar */}
+      <div className="bg-gradient-to-r from-blue-600 to-primary py-4">
+        <div className="container mx-auto px-4 md:px-6">
+          <Link href="/" className="inline-flex items-center text-white/80 hover:text-white transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Tilbage
           </Link>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 md:px-6 -mt-20 relative z-10">
+      <div className="container mx-auto px-4 md:px-6 py-8">
         {/* Title and Map Link */}
         <div className="flex flex-wrap items-center gap-4 mb-8">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-3xl md:text-5xl font-display font-bold text-primary"
+            className="text-3xl md:text-5xl font-display font-bold text-primary flex items-center gap-3"
           >
+            <Fish className="w-10 h-10" />
             {spot.name}
           </motion.h1>
           <Link
@@ -460,10 +448,38 @@ export default function SpotDetail() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Weather stats card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-gradient-to-b from-blue-500 to-primary text-white rounded-3xl p-6 shadow-xl shadow-blue-900/20 mb-8"
+        >
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-3xl font-bold">{safeWaterTemp}°</div>
+              <div className="text-sm opacity-80">Vand</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-orange-200">{safeAirTemp}°</div>
+              <div className="text-sm opacity-80">Luft</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold flex items-center justify-center gap-1">
+                {windSpeed != null ? windSpeed.toFixed(0) : "--"}
+                {windDirection != null && (
+                  <Navigation
+                    className="w-5 h-5 opacity-70"
+                    style={{ transform: `rotate(${windDirection + 180}deg)` }}
+                  />
+                )}
+              </div>
+              <div className="text-sm opacity-80">m/s</div>
+            </div>
+          </div>
+        </motion.div>
 
-          {/* Main Info Column */}
-          <div className="lg:col-span-2 space-y-8">
+        <div className="space-y-8">
 {spot.description && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -614,105 +630,6 @@ export default function SpotDetail() {
               lng={Number(spot.longitude)}
               name={spot.name}
             />
-
-          </div>
-
-          {/* Sidebar - Temperature focus */}
-          <div className="lg:col-span-1">
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="sticky top-24"
-            >
-              <div className="bg-gradient-to-b from-blue-500 to-primary text-white rounded-3xl p-8 shadow-xl shadow-blue-900/20 overflow-hidden relative">
-                {/* Decorative background elements */}
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-teal-400/20 rounded-full blur-3xl"></div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-4 opacity-90">
-                    <Thermometer className="w-6 h-6" />
-                    <span className="text-lg font-medium">Vandtemperatur</span>
-                  </div>
-
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-5xl font-display font-bold">{safeWaterTemp}</span>
-                    <span className="text-2xl opacity-60">°C</span>
-                  </div>
-
-                  <div className="h-2 bg-black/20 rounded-full mt-4 mb-2 overflow-hidden">
-                    <motion.div
-                      className="h-full bg-accent"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(((waterTemp || 0) / 20) * 100, 100)}%` }}
-                      transition={{ duration: 1, delay: 0.5 }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs opacity-60">
-                    <span>0°C</span>
-                    <span>10°C</span>
-                    <span>20°C+</span>
-                  </div>
-
-                  {/* Air temperature */}
-                  <div className="mt-6 pt-6 border-t border-white/10">
-                    <div className="flex items-center gap-3 mb-2 opacity-90">
-                      <Thermometer className="w-5 h-5 text-orange-300" />
-                      <span className="text-base font-medium">Lufttemperatur</span>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-display font-bold text-orange-200">{safeAirTemp}</span>
-                      <span className="text-lg opacity-60">°C</span>
-                    </div>
-                  </div>
-
-                  {/* Wind */}
-                  <div className="mt-6 pt-6 border-t border-white/10">
-                    <div className="flex items-center gap-3 mb-2 opacity-90">
-                      <Wind className="w-5 h-5" />
-                      <span className="text-base font-medium">Vind</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-display font-bold">{windSpeed != null ? windSpeed.toFixed(0) : "--"}</span>
-                      <span className="text-lg opacity-60">m/s</span>
-                      {windDirection != null && (
-                        <Navigation
-                          className="w-6 h-6 ml-2"
-                          style={{ transform: `rotate(${windDirection + 180}deg)` }}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {spot.lastUpdated && (
-                    <div className="mt-6 flex items-center gap-2 text-xs opacity-70">
-                      <Clock className="w-4 h-4" />
-                      <span>Opdateret kl. {formatDanishTime(spot.lastUpdated)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 p-6 rounded-3xl border border-border bg-white shadow-sm">
-                <h3 className="font-bold mb-4">Tips til stedet</h3>
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                  <li className="flex gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                    Bedst med waders for at nå dybere vand.
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                    Tidlig morgen eller sen aften giver ofte de bedste resultater.
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                    Tjek lokale regler for fredningstider.
-                  </li>
-                </ul>
-              </div>
-            </motion.div>
-          </div>
         </div>
       </div>
     </div>
