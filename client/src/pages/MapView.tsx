@@ -398,12 +398,16 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 }
 
 // Component to handle locate me button
-function LocateButton({ onLocate }: { onLocate: (lat: number, lng: number) => void }) {
+function LocateButton({ onLocate, onClear }: { onLocate: (lat: number, lng: number) => void; onClear: () => void }) {
   const map = useMap();
   const [locating, setLocating] = useState(false);
 
   const handleLocate = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+
+    // Clear any existing temp badge immediately
+    onClear();
 
     if (!navigator.geolocation) {
       alert("Geolocation understøttes ikke af din browser");
@@ -1022,7 +1026,10 @@ export default function MapView() {
             />
             <MapClickHandler onMapClick={handleMapClick} />
             <ZoomTracker onZoomChange={setCurrentZoom} />
-            <LocateButton onLocate={(lat, lng) => setTempBadgeCoords({ lat, lng })} />
+            <LocateButton
+              onLocate={(lat, lng) => setTempBadgeCoords({ lat, lng })}
+              onClear={() => setTempBadgeCoords(null)}
+            />
             {targetLocation && (
               <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
             )}
