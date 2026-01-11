@@ -81,7 +81,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
       ">
         ${n}
       </div>
-    `,className:"cluster-icon",iconSize:[r,r],iconAnchor:[r/2,r/2]})},yde=(e,t,n,r,i=1)=>{const o=e===null?"#6b7280":e<5?"#3b82f6":e<12?"#14b8a6":"#f97316",a=e!=null?e.toFixed(1):"--",u=t!=null?t.toFixed(0):"--",f=r!=null?r+180:0,d=-f,p=n!=null?n+180-f:0,m=Math.round(100*i),v=Math.round(95*i);return Jr.divIcon({className:"weather-badge-marker",html:`
+    `,className:"cluster-icon",iconSize:[r,r],iconAnchor:[r/2,r/2]})},yde=(e,t,n,r,i=1)=>{const o=e===null?"#6b7280":e<5?"#3b82f6":e<12?"#14b8a6":"#f97316",a=e!=null?e.toFixed(1):"--",u=t!=null?t.toFixed(0):"--",f=r!=null?r+180:0,d=-f,p=n!=null?n+180-f:0;return Jr.divIcon({className:"weather-badge-marker",html:`
       <div style="position: relative; width: 100px; height: 100px; transform: scale(${i}); transform-origin: center bottom;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
@@ -172,7 +172,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           </div>
         </div>
       </div>
-    `,iconSize:[m,m],iconAnchor:[m/2,v],popupAnchor:[0,-Math.round(85*i)]})},_de=(e,t,n,r,i=1)=>yde(e,t,n,r,i),xde=()=>Jr.divIcon({className:"webcam-marker",html:`
+    `,iconSize:[100,100],iconAnchor:[50,95],popupAnchor:[0,-85]})},_de=(e,t,n,r,i=1)=>yde(e,t,n,r,i),xde=()=>Jr.divIcon({className:"webcam-marker",html:`
       <div style="display: flex; flex-direction: column; align-items: center;">
         <div style="
           background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
