@@ -1148,25 +1148,25 @@ function DateTimePicker({
     return String(selectedDateTime.getHours()).padStart(2, '0');
   }, [selectedDateTime]);
 
-  // Check if current time is "now" (same hour)
-  const isNow = useMemo(() => {
+  // Check if selected time is default (today at 12:00)
+  const isDefault = useMemo(() => {
     const now = new Date();
     return selectedDateTime.getFullYear() === now.getFullYear() &&
            selectedDateTime.getMonth() === now.getMonth() &&
            selectedDateTime.getDate() === now.getDate() &&
-           selectedDateTime.getHours() === now.getHours();
+           selectedDateTime.getHours() === 12;
   }, [selectedDateTime]);
 
   // Format display text
   const displayText = useMemo(() => {
-    if (isNow) return "Nu";
+    if (isDefault) return "I dag kl. 12";
     const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
     const dayName = dayNames[selectedDateTime.getDay()];
     const day = selectedDateTime.getDate();
     const month = selectedDateTime.getMonth() + 1;
     const hour = String(selectedDateTime.getHours()).padStart(2, '0');
     return `${dayName} ${day}/${month} kl. ${hour}`;
-  }, [selectedDateTime, isNow]);
+  }, [selectedDateTime, isDefault]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [year, month, day] = e.target.value.split('-').map(Number);
@@ -1185,24 +1185,24 @@ function DateTimePicker({
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   return (
-    <div className="absolute top-6 left-6 z-[1000]" data-testid="datetime-picker">
+    <div className="absolute top-2 left-2 sm:top-6 sm:left-6 z-[1000] max-w-[calc(100vw-1rem)] sm:max-w-none" data-testid="datetime-picker">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* Collapsed view - just shows current selection */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 transition-colors w-full"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 hover:bg-gray-50 transition-colors w-full"
           data-testid="datetime-toggle"
         >
-          <Calendar className="w-4 h-4 text-primary" />
-          <span className="font-medium text-sm" data-testid="datetime-display">{displayText}</span>
-          {!isNow && (
+          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+          <span className="font-medium text-xs sm:text-sm truncate" data-testid="datetime-display">{displayText}</span>
+          {!isDefault && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onReset();
               }}
-              className="ml-2 p-1 hover:bg-gray-200 rounded-full"
-              title="Nulstil til nu"
+              className="ml-1 sm:ml-2 p-0.5 sm:p-1 hover:bg-gray-200 rounded-full flex-shrink-0"
+              title="Nulstil"
               data-testid="datetime-reset"
             >
               <RotateCcw className="w-3 h-3 text-gray-500" />
@@ -1212,15 +1212,15 @@ function DateTimePicker({
 
         {/* Expanded view - date and time picker */}
         {isExpanded && (
-          <div className="border-t border-gray-100 p-3" data-testid="datetime-expanded">
+          <div className="border-t border-gray-100 p-2 sm:p-3" data-testid="datetime-expanded">
             {/* Date picker */}
-            <div className="mb-3">
+            <div className="mb-2 sm:mb-3">
               <label className="text-xs text-gray-500 block mb-1">Dato</label>
               <input
                 type="date"
                 value={dateValue}
                 onChange={handleDateChange}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 data-testid="datetime-date-input"
               />
             </div>
@@ -1228,12 +1228,12 @@ function DateTimePicker({
             {/* Hour picker - scrollable grid */}
             <div className="mb-2">
               <label className="text-xs text-gray-500 block mb-1">Klokkeslæt</label>
-              <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto" data-testid="datetime-hour-grid">
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1 max-h-28 sm:max-h-32 overflow-y-auto" data-testid="datetime-hour-grid">
                 {hours.map(hour => (
                   <button
                     key={hour}
                     onClick={() => handleHourChange(hour)}
-                    className={`py-1 px-2 text-xs rounded ${
+                    className={`py-1 px-1.5 sm:px-2 text-xs rounded ${
                       parseInt(timeValue) === hour
                         ? 'bg-primary text-white'
                         : 'bg-gray-100 hover:bg-gray-200'
@@ -1252,11 +1252,11 @@ function DateTimePicker({
                 onReset();
                 setIsExpanded(false);
               }}
-              className="w-full py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full py-1.5 sm:py-2 text-xs sm:text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-1.5 sm:gap-2"
               data-testid="datetime-reset-full"
             >
-              <RotateCcw className="w-4 h-4" />
-              Nulstil til nu
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Nulstil
             </button>
           </div>
         )}
@@ -1265,8 +1265,15 @@ function DateTimePicker({
   );
 }
 
+// Get default datetime (today at 12:00)
+function getDefaultDateTime(): Date {
+  const now = new Date();
+  now.setHours(12, 0, 0, 0);
+  return now;
+}
+
 export default function MapView() {
-  const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(getDefaultDateTime);
   const { data: spots, isLoading, error } = useSpots(selectedDateTime);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -1274,9 +1281,9 @@ export default function MapView() {
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const searchString = useSearch();
 
-  // Reset datetime to current time
+  // Reset datetime to today at 12:00
   const handleResetDateTime = useCallback(() => {
-    setSelectedDateTime(new Date());
+    setSelectedDateTime(getDefaultDateTime());
   }, []);
 
   // Calculate badge scale based on zoom (slightly smaller when zoomed out)

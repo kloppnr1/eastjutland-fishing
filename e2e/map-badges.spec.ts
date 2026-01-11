@@ -641,9 +641,9 @@ test.describe('DateTime Picker', () => {
     await expect(picker).toBeVisible();
   });
 
-  test('datetime picker shows "Nu" (now) by default', async ({ page }) => {
+  test('datetime picker shows "I dag kl. 12" by default', async ({ page }) => {
     const display = page.getByTestId('datetime-display');
-    await expect(display).toHaveText('Nu');
+    await expect(display).toHaveText('I dag kl. 12');
   });
 
   test('clicking datetime picker toggle expands the picker', async ({ page }) => {
@@ -692,36 +692,32 @@ test.describe('DateTime Picker', () => {
     }
   });
 
-  test('reset button returns to current time', async ({ page }) => {
+  test('reset button returns to default (12:00)', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
-    // Select a different hour to change from "Nu"
-    const currentHour = new Date().getHours();
-    const differentHour = (currentHour + 5) % 24;
-    const hourButton = page.getByTestId(`datetime-hour-${differentHour}`);
+    // Select a different hour to change from default
+    const hourButton = page.getByTestId('datetime-hour-18');
     await hourButton.click();
 
-    // Display should not show "Nu" anymore
+    // Display should not show default anymore
     const display = page.getByTestId('datetime-display');
-    await expect(display).not.toHaveText('Nu');
+    await expect(display).not.toHaveText('I dag kl. 12');
 
     // Click reset button
     const resetButton = page.getByTestId('datetime-reset-full');
     await resetButton.click();
 
-    // Should be back to "Nu"
-    await expect(display).toHaveText('Nu');
+    // Should be back to default
+    await expect(display).toHaveText('I dag kl. 12');
   });
 
-  test('reset icon appears when not showing current time', async ({ page }) => {
+  test('reset icon appears when not showing default time', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
-    // Select a different hour
-    const currentHour = new Date().getHours();
-    const differentHour = (currentHour + 5) % 24;
-    const hourButton = page.getByTestId(`datetime-hour-${differentHour}`);
+    // Select a different hour (not 12)
+    const hourButton = page.getByTestId('datetime-hour-18');
     await hourButton.click();
 
     // Close the expanded view
