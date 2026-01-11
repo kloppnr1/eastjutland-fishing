@@ -67,22 +67,89 @@ const createClusterIcon = (cluster: any) => {
   });
 };
 
+// Calculate stem properties for spots to avoid overlap
+// Returns a map of spotId -> { stemLength, overrideDirection }
+// overrideDirection is null if seaDirection should be used, or a number if direction should be overridden
+interface StemProps {
+  stemLength: number;
+  overrideDirection: number | null;
+}
+
+function calculateStemProps(
+  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string; seaDirection?: number | null }>,
+  baseLength: number = 12
+): Map<number, StemProps> {
+  const stemProps = new Map<number, StemProps>();
+  const fishingSpots = spots.filter(s => s.spotType !== "webcam");
+
+  // For each spot, find nearby spots
+  for (const spot of fishingSpots) {
+    const lat = parseFloat(spot.latitude);
+    const lng = parseFloat(spot.longitude);
+
+    // Find all nearby spots (including self)
+    const nearbySpots: typeof fishingSpots = [];
+
+    for (const other of fishingSpots) {
+      const otherLat = parseFloat(other.latitude);
+      const otherLng = parseFloat(other.longitude);
+
+      // Check if within ~2km (roughly 0.02 degrees)
+      const distance = Math.sqrt(
+        Math.pow(lat - otherLat, 2) + Math.pow(lng - otherLng, 2)
+      );
+
+      if (distance < 0.025) {
+        nearbySpots.push(other);
+      }
+    }
+
+    // If only this spot (no nearby), use default
+    if (nearbySpots.length <= 1) {
+      stemProps.set(spot.id, { stemLength: baseLength, overrideDirection: null });
+    } else {
+      // Find this spot's index in the nearby group (sorted by id for consistency)
+      nearbySpots.sort((a, b) => a.id - b.id);
+      const myIndex = nearbySpots.findIndex(s => s.id === spot.id);
+      const total = nearbySpots.length;
+
+      // Assign stem length: vary between 12, 27, 42
+      const lengthLevel = myIndex % 3;
+      const stemLength = baseLength + lengthLevel * 15;
+
+      // Assign direction: spread evenly around the compass
+      // Each spot gets a direction offset from 0
+      const directionOffset = (360 / total) * myIndex;
+      const overrideDirection = Math.round(directionOffset) % 360;
+
+      stemProps.set(spot.id, { stemLength, overrideDirection });
+    }
+  }
+
+  return stemProps;
+}
+
 // Compass-style round badge - shows water temp + wind speed with direction pointer
 // seaDirection: 0-360 degrees indicating where the sea is (badge points away from it)
 // scale: 0-1 for zoom-based scaling
+// stemLength: length of stem in pixels (default 12)
+// overrideDirection: if set, overrides seaDirection for nearby spot separation
 const createWeatherBadge = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
   seaDirection: number | null,
-  scale: number = 1
+  scale: number = 1,
+  stemLength: number = 12,
+  overrideDirection: number | null = null
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
 
-  // Badge rotation: stem points away from sea (opposite direction)
-  const badgeRotation = seaDirection != null ? seaDirection + 180 : 0;
+  // Badge rotation: use override if set, otherwise stem points away from sea
+  const effectiveSeaDirection = overrideDirection != null ? overrideDirection : seaDirection;
+  const badgeRotation = effectiveSeaDirection != null ? effectiveSeaDirection + 180 : 0;
   // Counter-rotate content to keep text upright
   const contentRotation = -badgeRotation;
   // Wind arrow needs to account for badge rotation
@@ -123,14 +190,14 @@ const createWeatherBadge = (
             left: 50%;
             transform: translateX(-50%);
             width: 2px;
-            height: 12px;
+            height: ${stemLength}px;
             background: white;
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
           "></div>
           <!-- Badge container -->
           <div style="
             position: absolute;
-            bottom: 12px;
+            bottom: ${stemLength}px;
             left: 50%;
             transform: translateX(-50%);
             width: 46px;
@@ -197,9 +264,11 @@ const createSpotIcon = (
   windSpeed: number | null,
   windDir: number | null,
   seaDirection: number | null,
-  scale: number = 1
+  scale: number = 1,
+  stemLength: number = 12,
+  overrideDirection: number | null = null
 ) => {
-  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection, scale);
+  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection, scale, stemLength, overrideDirection);
 };
 
 // Webcam marker icon - just camera icon
@@ -785,6 +854,12 @@ export default function MapView() {
     return Math.min(1, Math.max(0.6, (currentZoom - 8) / 6));
   }, [currentZoom]);
 
+  // Calculate stem properties for nearby spots to avoid overlap
+  const stemProps = useMemo(() => {
+    if (!spots) return new Map<number, StemProps>();
+    return calculateStemProps(spots);
+  }, [spots]);
+
   // Parse URL params for target location
   const targetLocation = useMemo(() => {
     const params = new URLSearchParams(searchString);
@@ -910,7 +985,15 @@ export default function MapView() {
                 <Marker
                   key={`fish-${spot.id}-${spot.currentWaterTemp}-${spot.windSpeed}-${currentZoom}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
-                  icon={createSpotIcon(spot.currentWaterTemp, spot.windSpeed, spot.windDirection, spot.seaDirection, badgeScale)}
+                  icon={createSpotIcon(
+                    spot.currentWaterTemp,
+                    spot.windSpeed,
+                    spot.windDirection,
+                    spot.seaDirection,
+                    badgeScale,
+                    stemProps.get(spot.id)?.stemLength || 12,
+                    stemProps.get(spot.id)?.overrideDirection ?? null
+                  )}
                   eventHandlers={{
                     click: () => setTempBadgeCoords(null),
                   }}

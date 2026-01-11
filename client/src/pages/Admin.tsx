@@ -3,10 +3,86 @@ import { useSpots } from "@/hooks/use-spots";
 import { Header } from "@/components/Header";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Trash2, Edit2, Save, X, Upload, Loader2, MapPin, Fish, Video
+  Trash2, Edit2, Save, X, Upload, Loader2, MapPin, Fish, Video, Compass
 } from "lucide-react";
 import type { FishingSpot } from "@shared/schema";
 import { resolveImageUrl } from "@/lib/image-url";
+
+// Interactive compass picker for sea direction
+function SeaDirectionPicker({
+  value,
+  onChange,
+}: {
+  value: number | null;
+  onChange: (direction: number | null) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const x = e.clientX - centerX;
+    const y = e.clientY - centerY;
+    // Calculate angle (0 = north, 90 = east, etc.)
+    let angle = Math.atan2(x, -y) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+    onChange(Math.round(angle));
+  };
+
+  const directions = [
+    { label: "N", angle: 0 },
+    { label: "Ø", angle: 90 },
+    { label: "S", angle: 180 },
+    { label: "V", angle: 270 },
+  ];
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        ref={containerRef}
+        onClick={handleClick}
+        className="relative w-16 h-16 rounded-full border-2 border-blue-300 bg-gradient-to-b from-blue-100 to-blue-200 cursor-crosshair select-none"
+        title="Klik for at markere havets retning"
+      >
+        {/* Direction labels */}
+        {directions.map((d) => (
+          <span
+            key={d.label}
+            className="absolute text-[10px] font-bold text-blue-600"
+            style={{
+              top: d.angle === 0 ? "2px" : d.angle === 180 ? "auto" : "50%",
+              bottom: d.angle === 180 ? "2px" : "auto",
+              left: d.angle === 270 ? "2px" : d.angle === 90 ? "auto" : "50%",
+              right: d.angle === 90 ? "2px" : "auto",
+              transform: d.angle === 0 || d.angle === 180 ? "translateX(-50%)" : "translateY(-50%)",
+            }}
+          >
+            {d.label}
+          </span>
+        ))}
+        {/* Center dot */}
+        <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-gray-600 rounded-full -translate-x-1/2 -translate-y-1/2" />
+        {/* Sea direction indicator */}
+        {value !== null && (
+          <div
+            className="absolute top-1/2 left-1/2 w-1 origin-bottom"
+            style={{
+              height: "24px",
+              transform: `translate(-50%, -100%) rotate(${value}deg)`,
+            }}
+          >
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full -translate-x-[3px] shadow-md" />
+          </div>
+        )}
+      </div>
+      <span className="text-[10px] text-gray-500">
+        {value !== null ? `${value}°` : "Ikke sat"}
+      </span>
+    </div>
+  );
+}
 
 interface EditingSpot {
   id: number;
@@ -16,6 +92,7 @@ interface EditingSpot {
   imageUrl: string | null;
   newImageFile: File | null;
   imagePreview: string | null;
+  seaDirection: number | null;
 }
 
 export default function Admin() {
@@ -77,6 +154,7 @@ export default function Admin() {
       imageUrl: spot.imageUrl,
       newImageFile: null,
       imagePreview: null,
+      seaDirection: spot.seaDirection ?? null,
     });
   };
 
@@ -104,6 +182,7 @@ export default function Admin() {
         description: editingSpot.description,
         bestFor: editingSpot.bestFor,
         imageUrl: editingSpot.imageUrl,
+        seaDirection: editingSpot.seaDirection,
       },
       imageFile: editingSpot.newImageFile,
     });
@@ -188,6 +267,17 @@ export default function Admin() {
                           className="w-full px-3 py-2 border border-border rounded-lg text-sm resize-none"
                         />
                       </div>
+
+                      {/* Sea direction - only for fishing spots */}
+                      {spot.spotType !== "webcam" && (
+                        <div className="shrink-0">
+                          <label className="block text-xs text-muted-foreground mb-1 text-center">Havretning</label>
+                          <SeaDirectionPicker
+                            value={editingSpot.seaDirection}
+                            onChange={(dir) => setEditingSpot({ ...editingSpot, seaDirection: dir })}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -244,9 +334,17 @@ export default function Admin() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-lg">{spot.name}</h3>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{Number(spot.latitude).toFixed(4)}, {Number(spot.longitude).toFixed(4)}</span>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-1">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {Number(spot.latitude).toFixed(4)}, {Number(spot.longitude).toFixed(4)}
+                        </span>
+                        {spot.spotType !== "webcam" && (
+                          <span className="flex items-center gap-1">
+                            <Compass className="w-3 h-3" />
+                            {spot.seaDirection != null ? `${spot.seaDirection}°` : "Ikke sat"}
+                          </span>
+                        )}
                       </div>
                       {spot.description && (
                         <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
