@@ -87,6 +87,7 @@ function calculateStemProps(
 ): Map<number, StemProps> {
   const stemProps = new Map<number, StemProps>();
   const fishingSpots = spots.filter(s => s.spotType !== "webcam");
+  const webcamSpots = spots.filter(s => s.spotType === "webcam");
 
   if (fishingSpots.length === 0) return stemProps;
 
@@ -98,18 +99,36 @@ function calculateStemProps(
   const STEM_SCALE = 0.00008;
   // Badge radius in degrees (badge is ~46px wide)
   const BADGE_RADIUS = 23 * STEM_SCALE;
+  // Webcam icon radius (smaller, ~40px tall including stem)
+  const WEBCAM_RADIUS = 20 * STEM_SCALE;
 
   // Nearby threshold for considering overlap
   const NEARBY_THRESHOLD = 0.25; // ~25km
 
-  // Track placed badge centers
+  // Track placed badge/icon centers - start with webcams as fixed obstacles
   const placed: PlacedBadge[] = [];
 
+  // Add webcam positions as obstacles (they have fixed icons pointing up)
+  for (const webcam of webcamSpots) {
+    const lat = parseFloat(webcam.latitude);
+    const lng = parseFloat(webcam.longitude);
+    // Webcam icon is centered above its anchor point (stem + icon height ~35px up)
+    placed.push({
+      anchorLat: lat,
+      anchorLng: lng,
+      badgeLat: lat + 35 * STEM_SCALE,
+      badgeLng: lng,
+    });
+  }
+
   // Calculate neighbor count for each spot to determine processing order
+  // Include both fishing spots AND webcams as neighbors
   const spotWithDensity = fishingSpots.map(spot => {
     const lat = parseFloat(spot.latitude);
     const lng = parseFloat(spot.longitude);
     let neighborCount = 0;
+
+    // Count nearby fishing spots
     for (const other of fishingSpots) {
       if (other.id === spot.id) continue;
       const d = Math.sqrt(
@@ -118,6 +137,16 @@ function calculateStemProps(
       );
       if (d < NEARBY_THRESHOLD) neighborCount++;
     }
+
+    // Count nearby webcams
+    for (const webcam of webcamSpots) {
+      const d = Math.sqrt(
+        Math.pow(lat - parseFloat(webcam.latitude), 2) +
+        Math.pow(lng - parseFloat(webcam.longitude), 2)
+      );
+      if (d < NEARBY_THRESHOLD) neighborCount++;
+    }
+
     return { spot, neighborCount, lat, lng };
   });
 
