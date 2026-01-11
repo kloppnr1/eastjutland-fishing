@@ -211,26 +211,26 @@ const createWeatherBadge = (
             left: 50%;
             transform: translateX(-50%) rotate(${contentRotation}deg);
             background: white;
-            border-radius: 5px;
+            border-radius: 6px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-            padding: 5px 8px;
+            padding: 6px 10px;
             white-space: nowrap;
           ">
             <!-- Row 1: Wave + Water Temp -->
-            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 3px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
                 <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               </svg>
-              <span style="font-size: 13px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
+              <span style="font-size: 14px; font-weight: 700; color: ${waterColor};">${waterText}°</span>
             </div>
             <!-- Row 2: Wind Arrow + Wind Speed -->
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <svg width="16" height="16" viewBox="0 0 24 24">
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <svg width="18" height="18" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
                 <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${arrowRotation}deg);"/>
               </svg>
-              <span style="font-size: 13px; font-weight: 700; color: #64748b;">${windText}</span>
+              <span style="font-size: 14px; font-weight: 700; color: #64748b;">${windText}</span>
             </div>
           </div>
         </div>
