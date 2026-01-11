@@ -148,7 +148,7 @@ interface StemProps {
 }
 
 function calculateStemProps(
-  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string; seaDirection?: number | null }>
+  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string }>
 ): Map<number, StemProps> {
   const stemProps = new Map<number, StemProps>();
 
@@ -216,26 +216,23 @@ function calculateStemProps(
 }
 
 // Square info badge - shows water temp and wind info
-// seaDirection: 0-360 degrees indicating where the sea is (badge points away from it)
 // scale: 0-1 for zoom-based scaling
 // stemLength: length of stem in pixels (default 12)
-// overrideDirection: if set, overrides seaDirection for nearby spot separation
+// rotation: badge stem rotation in degrees (for nearby spot separation)
 const createWeatherBadge = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  seaDirection: number | null,
   scale: number = 1,
   stemLength: number = 12,
-  overrideDirection: number | null = null
+  rotation: number = 0
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
 
-  // Badge rotation: use override if set, otherwise stem points away from sea
-  const effectiveSeaDirection = overrideDirection != null ? overrideDirection : seaDirection;
-  const badgeRotation = effectiveSeaDirection != null ? effectiveSeaDirection + 180 : 0;
+  // Badge rotation for nearby spot separation
+  const badgeRotation = rotation;
   // Counter-rotate content to keep text upright
   const contentRotation = -badgeRotation;
   // Wind arrow rotation (points where wind is coming FROM)
@@ -327,12 +324,11 @@ const createSpotIcon = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  seaDirection: number | null,
   scale: number = 1,
   stemLength: number = 12,
-  overrideDirection: number | null = null
+  rotation: number = 0
 ) => {
-  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection, scale, stemLength, overrideDirection);
+  return createWeatherBadge(waterTemp, windSpeed, windDir, scale, stemLength, rotation);
 };
 
 // Expanded badge when spot is selected - shows full info
@@ -1325,10 +1321,9 @@ export default function MapView() {
                         spot.currentWaterTemp,
                         spot.windSpeed,
                         spot.windDirection,
-                        spot.seaDirection,
                         badgeScale,
                         stemProps.get(spot.id)?.stemLength || 12,
-                        stemProps.get(spot.id)?.overrideDirection ?? null
+                        stemProps.get(spot.id)?.overrideDirection ?? 0
                       )
                   }
                   eventHandlers={{

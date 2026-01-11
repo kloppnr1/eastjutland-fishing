@@ -10,7 +10,6 @@ export const fishingSpots = pgTable("fishing_spots", {
   description: text("description"),
   spotType: text("spot_type").default("fishing"), // "fishing" or "webcam"
   bestFor: text("best_for"), // Comma separated species
-  seaDirection: integer("sea_direction"), // 0-360 degrees, direction where sea is located
   currentWaterTemp: real("current_water_temp"),
   currentAirTemp: real("current_air_temp"),
   windSpeed: real("wind_speed"),

@@ -1,83 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, MapPin, Plus, Thermometer, Loader2, Upload, Wind, Compass } from "lucide-react";
+import { X, MapPin, Plus, Thermometer, Loader2, Upload, Wind } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { isStaticMode, useSpots } from "@/hooks/use-spots";
-
-// Interactive compass picker for sea direction
-function SeaDirectionPicker({
-  value,
-  onChange,
-}: {
-  value: number | null;
-  onChange: (direction: number) => void;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const x = e.clientX - centerX;
-    const y = e.clientY - centerY;
-    // Calculate angle (0 = north, 90 = east, etc.)
-    let angle = Math.atan2(x, -y) * (180 / Math.PI);
-    if (angle < 0) angle += 360;
-    onChange(Math.round(angle));
-  };
-
-  const directions = [
-    { label: "N", angle: 0 },
-    { label: "Ø", angle: 90 },
-    { label: "S", angle: 180 },
-    { label: "V", angle: 270 },
-  ];
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div
-        ref={containerRef}
-        onClick={handleClick}
-        className="relative w-24 h-24 rounded-full border-2 border-blue-300 bg-gradient-to-b from-blue-100 to-blue-200 cursor-crosshair select-none"
-        title="Klik for at markere havets retning"
-      >
-        {/* Direction labels */}
-        {directions.map((d) => (
-          <span
-            key={d.label}
-            className="absolute text-xs font-bold text-blue-600"
-            style={{
-              top: d.angle === 0 ? "4px" : d.angle === 180 ? "auto" : "50%",
-              bottom: d.angle === 180 ? "4px" : "auto",
-              left: d.angle === 270 ? "4px" : d.angle === 90 ? "auto" : "50%",
-              right: d.angle === 90 ? "4px" : "auto",
-              transform: d.angle === 0 || d.angle === 180 ? "translateX(-50%)" : "translateY(-50%)",
-            }}
-          >
-            {d.label}
-          </span>
-        ))}
-        {/* Center dot */}
-        <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-gray-600 rounded-full -translate-x-1/2 -translate-y-1/2" />
-        {/* Sea direction indicator */}
-        {value !== null && (
-          <div
-            className="absolute top-1/2 left-1/2 w-1 origin-bottom"
-            style={{
-              height: "36px",
-              transform: `translate(-50%, -100%) rotate(${value}deg)`,
-            }}
-          >
-            <div className="w-3 h-3 bg-blue-500 rounded-full -translate-x-1 shadow-md" />
-          </div>
-        )}
-      </div>
-      <span className="text-xs text-gray-500">
-        {value !== null ? `Hav: ${value}°` : "Klik på kompas"}
-      </span>
-    </div>
-  );
-}
 
 interface AddSpotModalProps {
   isOpen: boolean;
@@ -106,7 +30,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
-  const [seaDirection, setSeaDirection] = useState<number | null>(null);
 
   // Reverse geocoding to get place name
   const fetchPlaceName = useCallback(async () => {
@@ -192,7 +115,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
       setWindDirection(null);
       setMeasurementTime(null);
       setSuggestedName(null);
-      setSeaDirection(null);
       return;
     }
 
@@ -243,7 +165,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
       description: string;
       bestFor: string;
       imageUrl?: string | null;
-      seaDirection?: number | null;
     }) => {
       const res = await fetch("/api/spots", {
         method: "POST",
@@ -269,7 +190,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
     setImagePreview(null);
     setError("");
     setSuggestedName(null);
-    setSeaDirection(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -294,7 +214,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
             description: formData.description,
             bestFor: formData.bestFor,
             imageUrl: null,
-            seaDirection: seaDirection,
           });
           onClose();
           resetForm();
@@ -311,7 +230,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
           description: formData.description,
           bestFor: formData.bestFor,
           imageUrl,
-          seaDirection: seaDirection,
         });
       }
     } catch (err) {
@@ -391,17 +309,6 @@ export function AddSpotModal({ isOpen, onClose, coordinates }: AddSpotModalProps
               </div>
             </div>
 
-            {/* Sea direction picker */}
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">Havets retning</label>
-                <p className="text-xs text-gray-500">Klik på kompasset for at markere hvilken retning havet er i forhold til fiskestedet</p>
-              </div>
-              <SeaDirectionPicker
-                value={seaDirection}
-                onChange={setSeaDirection}
-              />
-            </div>
           </div>
         )}
 
