@@ -88,9 +88,8 @@ const createWeatherBadge = (
   // Wind arrow needs to account for badge rotation
   const arrowRotation = windDir != null ? windDir + 180 - badgeRotation : 0;
 
-  // Apply scale to entire badge
-  const scaledSize = Math.round(100 * scale);
-  const scaledAnchorY = Math.round(95 * scale);
+  // Keep iconSize/iconAnchor constant - CSS scale handles visual sizing
+  // transform-origin: center bottom keeps the dot position fixed during scaling
 
   return divIcon({
     className: "weather-badge-marker",
@@ -186,9 +185,9 @@ const createWeatherBadge = (
         </div>
       </div>
     `,
-    iconSize: [scaledSize, scaledSize],
-    iconAnchor: [scaledSize / 2, scaledAnchorY],
-    popupAnchor: [0, -Math.round(85 * scale)],
+    iconSize: [100, 100],
+    iconAnchor: [50, 95],
+    popupAnchor: [0, -85],
   });
 };
 
