@@ -243,7 +243,7 @@ test.describe('Cluster Stacked Badges', () => {
     }
   });
 
-  test('cluster shows count text', async ({ page }) => {
+  test('cluster shows count number', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
 
@@ -255,8 +255,9 @@ test.describe('Cluster Stacked Badges', () => {
     const cluster = clusters.first();
     await expect(cluster).toBeVisible();
 
-    // Should contain "steder" (Danish for "places")
-    await expect(cluster).toContainText('steder');
+    // Should contain a number (the count)
+    const text = await cluster.textContent();
+    expect(text).toMatch(/\d+/);
   });
 
   test('cluster shows water temperature (single value, range, or --)', async ({ page }) => {

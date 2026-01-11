@@ -73,8 +73,8 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   const stackCount = Math.min(3, count);
 
   // Fixed badge dimensions for consistent stacking
-  const badgeWidth = 80;
-  const badgeHeight = 62;
+  const badgeWidth = 58;
+  const badgeHeight = 52;
 
   return divIcon({
     html: `
@@ -142,7 +142,7 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
           width: ${badgeWidth}px;
           height: ${badgeHeight}px;
-          padding: 5px 6px;
+          padding: 4px 6px;
           box-sizing: border-box;
           pointer-events: auto;
           cursor: pointer;
@@ -151,20 +151,20 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
           justify-content: center;
           gap: 2px;
         ">
-          <div style="font-size: 11px; font-weight: 800; color: #3b82f6; text-align: center;">${count} steder</div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+          <div style="font-size: 13px; font-weight: 800; color: #3b82f6; text-align: center;">${count}</div>
+          <div style="display: flex; align-items: center; gap: 3px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: 11px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+            <span style="font-size: 10px; font-weight: 700; color: ${waterColor};">${waterText}</span>
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+          <div style="display: flex; align-items: center; gap: 3px;">
             <svg width="12" height="12" viewBox="0 0 24 24" style="flex-shrink: 0;">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
               <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>
             </svg>
-            <span style="font-size: 11px; font-weight: 700; color: #64748b;">${windText}</span>
+            <span style="font-size: 10px; font-weight: 700; color: #64748b;">${windText}</span>
           </div>
         </div>
       </div>
