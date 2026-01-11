@@ -88,10 +88,10 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
 
-  // Scaled positioning values
+  // Scaled positioning values - larger offsets for more visible stacking
   const badgeBottom = Math.round(27 * scale);
-  const backOffset = Math.round(8 * scale);
-  const middleOffset = Math.round(6 * scale);
+  const backOffset = Math.round(12 * scale);
+  const middleOffset = Math.round(10 * scale);
 
   return divIcon({
     html: `
@@ -126,7 +126,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           position: absolute;
           bottom: ${badgeBottom + Math.round(8 * scale)}px;
           left: 50%;
-          transform: translateX(calc(-50% - ${backOffset}px)) rotate(-12deg);
+          transform: translateX(calc(-50% - ${backOffset}px)) rotate(-15deg);
           background: #9ca3af;
           border-radius: ${Math.round(6 * scale)}px;
           padding: ${paddingV}px ${paddingH}px;
@@ -143,7 +143,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           position: absolute;
           bottom: ${badgeBottom + Math.round(4 * scale)}px;
           left: 50%;
-          transform: translateX(calc(-50% + ${middleOffset}px)) rotate(10deg);
+          transform: translateX(calc(-50% + ${middleOffset}px)) rotate(12deg);
           background: #d1d5db;
           border-radius: ${Math.round(6 * scale)}px;
           padding: ${paddingV}px ${paddingH}px;
