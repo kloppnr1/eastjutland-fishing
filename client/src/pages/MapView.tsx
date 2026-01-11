@@ -59,13 +59,18 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const windMax = windSpeeds.length > 0 ? Math.max(...windSpeeds) : null;
 
   // Format display values - show "--" for missing data
+  // Compare rounded values to avoid showing duplicate ranges like "5.2-5.2°"
   const hasWaterData = waterMin != null && waterMax != null;
   const hasWindData = windMin != null && windMax != null;
+  const waterMinRounded = hasWaterData ? waterMin.toFixed(1) : null;
+  const waterMaxRounded = hasWaterData ? waterMax.toFixed(1) : null;
+  const windMinRounded = hasWindData ? windMin.toFixed(0) : null;
+  const windMaxRounded = hasWindData ? windMax.toFixed(0) : null;
   const waterText = hasWaterData
-    ? (waterMin === waterMax ? `${waterMin.toFixed(1)}°` : `${waterMin.toFixed(1)}-${waterMax.toFixed(1)}°`)
+    ? (waterMinRounded === waterMaxRounded ? `${waterMinRounded}°` : `${waterMinRounded}-${waterMaxRounded}°`)
     : "--";
   const windText = hasWindData
-    ? (windMin === windMax ? `${windMin.toFixed(0)}` : `${windMin.toFixed(0)}-${windMax.toFixed(0)}`)
+    ? (windMinRounded === windMaxRounded ? `${windMinRounded}` : `${windMinRounded}-${windMaxRounded}`)
     : "--";
   const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : 0;
 
