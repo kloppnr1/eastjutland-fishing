@@ -304,10 +304,20 @@ const createSpotIcon = (
   return createWeatherBadge(waterTemp, windSpeed, windDir, scale);
 };
 
+// Generate static map tile URL for a location
+const getStaticMapUrl = (lat: number, lng: number, width: number = 256, height: number = 100) => {
+  // Calculate bounding box around the point (roughly 500m)
+  const delta = 0.003; // ~300m at this latitude
+  const bbox = `${lng - delta},${lat - delta * 0.6},${lng + delta},${lat + delta * 0.6}`;
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${bbox}&bboxSR=4326&size=${width},${height}&imageSR=4326&format=jpg&f=image`;
+};
+
 // Expanded badge when spot is selected - shows full info
 const createExpandedBadge = (
   spot: {
     name: string;
+    latitude: string;
+    longitude: string;
     imageUrl?: string | null;
     currentWaterTemp: number | null;
     currentAirTemp: number | null;
@@ -320,9 +330,11 @@ const createExpandedBadge = (
   const airTemp = spot.currentAirTemp;
   const windSpeed = spot.windSpeed;
   const windDir = spot.windDirection;
+  const lat = Number(spot.latitude);
+  const lng = Number(spot.longitude);
 
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-  const imageUrl = spot.imageUrl ? resolveImageUrlFn(spot.imageUrl) : null;
+  const mapTileUrl = getStaticMapUrl(lat, lng, 256, 80);
 
   return divIcon({
     className: "expanded-badge-marker",
@@ -382,18 +394,29 @@ const createExpandedBadge = (
             text-align: center;
           ">${spot.name}</div>
 
-          ${imageUrl ? `
-          <!-- Image -->
+          <!-- Map tile -->
           <div style="
             width: 100%;
             height: 80px;
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 10px;
+            position: relative;
           ">
-            <img src="${imageUrl}" alt="${spot.name}" style="width: 100%; height: 100%; object-fit: cover;" />
+            <img src="${mapTileUrl}" alt="Kort" style="width: 100%; height: 100%; object-fit: cover;" />
+            <!-- Center dot marker -->
+            <div style="
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: #3b82f6;
+              box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.4);
+            "></div>
           </div>
-          ` : ''}
 
           <!-- Stats row -->
           <div style="
