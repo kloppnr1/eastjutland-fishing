@@ -88,7 +88,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const rowGap = Math.round(3 * scale);
   const paddingV = Math.round(6 * scale);
   const paddingH = Math.round(10 * scale);
-  const countGap = Math.round(2 * scale);
+  const countPillPadding = Math.round(2 * scale);
   const dotSize = Math.round(10 * scale);
   const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
@@ -100,6 +100,13 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   // Fixed width for all badges to ensure consistent stacking
   // Width accommodates: water "10.5-12.3°" and wind "10-15" without wrapping
   const badgeWidth = Math.round(95 * scale);
+
+  // Calculate badge height from actual content to ensure stacked badges match
+  // Height = paddingV*2 + countPill + rowGap + waterRow + rowGap + windRow
+  const countPillHeight = countPillPadding * 2 + fontSize;
+  const waterRowHeight = Math.max(waveIconSize, fontSize);
+  const windRowHeight = Math.max(windIconSize, fontSize);
+  const badgeHeight = paddingV * 2 + countPillHeight + rowGap + waterRowHeight + rowGap + windRowHeight;
 
   return divIcon({
     html: `
@@ -138,7 +145,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           background: #9ca3af;
           border-radius: ${Math.round(6 * scale)}px;
           width: ${badgeWidth}px;
-          height: ${Math.round(70 * scale)}px;
+          height: ${badgeHeight}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         "></div>
         ` : ''}
@@ -152,7 +159,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           background: #d1d5db;
           border-radius: ${Math.round(6 * scale)}px;
           width: ${badgeWidth}px;
-          height: ${Math.round(70 * scale)}px;
+          height: ${badgeHeight}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         "></div>
         ` : ''}
@@ -173,7 +180,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           cursor: pointer;
         ">
           <!-- Count in pill (fixed width, centered) -->
-          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${Math.round(2 * scale)}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px;">
+          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${countPillPadding}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px;">
             <span style="font-size: ${fontSize}px; font-weight: 700; color: white;">${count}</span>
           </div>
           <!-- Row 1: Wave + Water Temp (matching fish spot) -->
