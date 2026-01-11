@@ -114,13 +114,13 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           </div>
         </div>
         <!-- Stem pointing to exact location -->
-        <div style="width: 2px; height: 12px; background: ${r};"></div>
+        <div style="width: 2px; height: 12px; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"></div>
         <!-- Anchor point dot -->
         <div style="
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: ${r};
+          background: #7c3aed;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
         "></div>
       </div>
