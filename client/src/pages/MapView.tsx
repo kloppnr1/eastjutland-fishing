@@ -30,40 +30,113 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
-// Create cluster icon showing count and average temp
-const createClusterIcon = (cluster: any) => {
+// Create cluster icon showing count and stats - factory function
+const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) => {
   const markers = cluster.getAllChildMarkers();
   const count = markers.length;
 
-  // Calculate average water temp from clustered spots
-  let totalTemp = 0;
-  let tempCount = 0;
+  // Match markers to spots by position
+  const clusterSpots: any[] = [];
+  if (spots) {
+    for (const marker of markers) {
+      const pos = marker.getLatLng();
+      const spot = spots.find(s =>
+        Math.abs(Number(s.latitude) - pos.lat) < 0.0001 &&
+        Math.abs(Number(s.longitude) - pos.lng) < 0.0001
+      );
+      if (spot) clusterSpots.push(spot);
+    }
+  }
 
-  // We can't easily get spot data from markers, so just show count
-  const size = Math.min(50, 30 + count * 3);
+  // Calculate stats
+  const waterTemps = clusterSpots.map(s => s.currentWaterTemp).filter((t): t is number => t != null);
+  const windSpeeds = clusterSpots.map(s => s.windSpeed).filter((w): w is number => w != null);
+  const windDirs = clusterSpots.map(s => s.windDirection).filter((d): d is number => d != null);
+
+  const waterMin = waterTemps.length > 0 ? Math.min(...waterTemps) : null;
+  const waterMax = waterTemps.length > 0 ? Math.max(...waterTemps) : null;
+  const windMin = windSpeeds.length > 0 ? Math.min(...windSpeeds) : null;
+  const windMax = windSpeeds.length > 0 ? Math.max(...windSpeeds) : null;
+  const windDirMin = windDirs.length > 0 ? Math.min(...windDirs) : null;
+  const windDirMax = windDirs.length > 0 ? Math.max(...windDirs) : null;
+
+  // Format display values
+  const waterText = waterMin != null && waterMax != null
+    ? (waterMin === waterMax ? `${waterMin.toFixed(1)}°` : `${waterMin.toFixed(1)}-${waterMax.toFixed(1)}°`)
+    : null;
+  const windText = windMin != null && windMax != null
+    ? (windMin === windMax ? `${windMin.toFixed(0)}` : `${windMin.toFixed(0)}-${windMax.toFixed(0)}`)
+    : null;
+  const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : null;
+
+  const hasStats = waterText || windText;
+  const size = hasStats ? 70 : Math.min(50, 30 + count * 3);
+
+  if (!hasStats) {
+    return divIcon({
+      html: `
+        <div style="
+          width: ${size}px;
+          height: ${size}px;
+          background: linear-gradient(135deg, #3b82f6 0%, #14b8a6 100%);
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 800;
+          font-size: ${size * 0.4}px;
+        ">
+          ${count}
+        </div>
+      `,
+      className: "cluster-icon",
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+
+  const waterColor = waterMin != null ? (waterMin < 5 ? "#3b82f6" : waterMin < 12 ? "#14b8a6" : "#f97316") : "#6b7280";
 
   return divIcon({
     html: `
       <div style="
-        width: ${size}px;
-        height: ${size}px;
-        background: linear-gradient(135deg, #3b82f6 0%, #14b8a6 100%);
-        border-radius: 50%;
-        border: 3px solid white;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #3b82f6;
         box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        padding: 6px 8px;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 800;
-        font-size: ${size * 0.4}px;
+        gap: 2px;
       ">
-        ${count}
+        <div style="font-size: 12px; font-weight: 800; color: #3b82f6;">${count} steder</div>
+        ${waterText ? `
+          <div style="display: flex; align-items: center; gap: 3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5">
+              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+            </svg>
+            <span style="font-size: 11px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+          </div>
+        ` : ''}
+        ${windText ? `
+          <div style="display: flex; align-items: center; gap: 3px;">
+            <svg width="14" height="14" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
+              <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir != null ? avgWindDir + 180 : 0}deg);"/>
+            </svg>
+            <span style="font-size: 11px; font-weight: 700; color: #64748b;">${windText}</span>
+          </div>
+        ` : ''}
       </div>
     `,
     className: "cluster-icon",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: [80, 60],
+    iconAnchor: [40, 30],
   });
 };
 
@@ -1058,7 +1131,7 @@ export default function MapView() {
             {/* Fishing spots (clustered) */}
             <MarkerClusterGroup
               chunkedLoading
-              iconCreateFunction={createClusterIcon}
+              iconCreateFunction={createClusterIconFactory(spots)}
               maxClusterRadius={60}
               spiderfyOnMaxZoom={true}
               showCoverageOnHover={false}
