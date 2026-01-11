@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5000';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -12,7 +14,7 @@ export default defineConfig({
     timeout: 10000, // 10 second timeout for expect assertions
   },
   use: {
-    baseURL: 'http://localhost:5000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15000, // 15 second timeout for actions like click
@@ -23,7 +25,8 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
+  // Only start local server when not using external URL
+  webServer: process.env.PLAYWRIGHT_BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:5000',
     reuseExistingServer: true,
