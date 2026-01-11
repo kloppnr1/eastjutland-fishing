@@ -173,8 +173,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           pointer-events: auto;
           cursor: pointer;
         ">
-          <!-- Count in pill (fixed width) -->
-          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${Math.round(2 * scale)}px 0; margin-bottom: ${rowGap}px; text-align: center; width: ${Math.round(28 * scale)}px;">
+          <!-- Count in pill (fixed width, centered) -->
+          <div style="background: #3b82f6; border-radius: ${Math.round(4 * scale)}px; padding: ${Math.round(2 * scale)}px 0; margin: 0 auto ${rowGap}px auto; text-align: center; width: ${Math.round(28 * scale)}px;">
             <span style="font-size: ${fontSize}px; font-weight: 700; color: white;">${count}</span>
           </div>
           <!-- Row 1: Wave + Water Temp (matching fish spot) -->
