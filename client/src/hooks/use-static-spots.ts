@@ -1,12 +1,29 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { FishingSpot } from "@shared/schema";
 import { BUNDLED_SPOTS } from "@/data/spots";
 
 const USER_SPOTS_KEY = "ostjylland-user-spots";
-const WEATHER_TILE_CACHE_KEY = "ostjylland-weather-tiles";
+const WEATHER_TILE_CACHE_KEY = "ostjylland-weather-tiles-v3";
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 const TILE_SIZE = 0.1; // ~11km tiles (0.1 degrees)
 const REQUEST_DELAY = 300; // 300ms between API requests
+
+// Format date for cache key (YYYY-MM-DD-HH)
+function formatDateTimeKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}`;
+}
+
+// Format date for API (YYYY-MM-DD)
+function formatDateForApi(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Check if date is within forecast range (Open-Meteo provides ~16 days forecast)
+function isWithinForecastRange(date: Date): boolean {
+  const now = new Date();
+  const diffDays = (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+  return diffDays >= -5 && diffDays <= 16; // 5 days past, 16 days future
+}
 
 interface WeatherData {
   waterTemp: number | null;
@@ -79,26 +96,48 @@ function saveWeatherTileCache(cache: WeatherTileCache) {
   }
 }
 
-// Get cached weather for a location (checks tile cache)
-function getCachedWeather(lat: number, lng: number, cache: WeatherTileCache): WeatherData | null {
+// Get full cache key including datetime
+function getFullCacheKey(lat: number, lng: number, dateTime: Date): string {
   const tileKey = getTileKey(lat, lng);
-  const cached = cache[tileKey];
+  const dateTimeKey = formatDateTimeKey(dateTime);
+  return `${tileKey}_${dateTimeKey}`;
+}
+
+// Get cached weather for a location and time (checks tile cache)
+function getCachedWeather(lat: number, lng: number, dateTime: Date, cache: WeatherTileCache): WeatherData | null {
+  const fullKey = getFullCacheKey(lat, lng, dateTime);
+  const cached = cache[fullKey];
   if (cached && (Date.now() - cached.fetchedAt) < CACHE_DURATION) {
     return cached;
   }
   return null;
 }
 
-// Fetch weather from Open-Meteo API for a tile
-async function fetchWeatherForTile(lat: number, lng: number): Promise<WeatherData | null> {
+// Fetch weather from Open-Meteo API for a tile at a specific time
+async function fetchWeatherForTile(lat: number, lng: number, targetDateTime: Date): Promise<WeatherData | null> {
   try {
     // Use tile center for API request
     const center = getTileCenter(lat, lng);
+    const isCurrentTime = isCurrentHour(targetDateTime);
+    const dateStr = formatDateForApi(targetDateTime);
+    const targetHour = targetDateTime.getHours();
 
-    const [marineRes, weatherRes] = await Promise.all([
-      fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${center.lat}&longitude=${center.lng}&current=sea_surface_temperature`),
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&timezone=Europe/Copenhagen`),
-    ]);
+    let marineRes: Response;
+    let weatherRes: Response;
+
+    if (isCurrentTime) {
+      // Use current weather endpoints for real-time data
+      [marineRes, weatherRes] = await Promise.all([
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${center.lat}&longitude=${center.lng}&current=sea_surface_temperature`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&timezone=Europe/Copenhagen`),
+      ]);
+    } else {
+      // Use hourly endpoints for historical/forecast data
+      [marineRes, weatherRes] = await Promise.all([
+        fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${center.lat}&longitude=${center.lng}&hourly=sea_surface_temperature&start_date=${dateStr}&end_date=${dateStr}&timezone=Europe/Copenhagen`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&start_date=${dateStr}&end_date=${dateStr}&timezone=Europe/Copenhagen`),
+      ]);
+    }
 
     // Handle rate limiting
     if (marineRes.status === 429 || weatherRes.status === 429) {
@@ -114,16 +153,46 @@ async function fetchWeatherForTile(lat: number, lng: number): Promise<WeatherDat
 
     if (marineRes.ok) {
       const marineData = await marineRes.json();
-      waterTemp = marineData.current?.sea_surface_temperature ?? null;
-      time = marineData.current?.time ?? null;
+      if (isCurrentTime) {
+        waterTemp = marineData.current?.sea_surface_temperature ?? null;
+        time = marineData.current?.time ?? null;
+      } else {
+        // Extract hourly data at target hour
+        const hourlyTimes = marineData.hourly?.time as string[] | undefined;
+        const hourlyTemps = marineData.hourly?.sea_surface_temperature as number[] | undefined;
+        if (hourlyTimes && hourlyTemps) {
+          const hourIndex = hourlyTimes.findIndex(t => new Date(t).getHours() === targetHour);
+          if (hourIndex !== -1) {
+            waterTemp = hourlyTemps[hourIndex] ?? null;
+            time = hourlyTimes[hourIndex] ?? null;
+          }
+        }
+      }
     }
 
     if (weatherRes.ok) {
       const weatherData = await weatherRes.json();
-      airTemp = weatherData.current?.temperature_2m ?? null;
-      windSpeed = weatherData.current?.wind_speed_10m ?? null;
-      windDirection = weatherData.current?.wind_direction_10m ?? null;
-      if (!time) time = weatherData.current?.time ?? null;
+      if (isCurrentTime) {
+        airTemp = weatherData.current?.temperature_2m ?? null;
+        windSpeed = weatherData.current?.wind_speed_10m ?? null;
+        windDirection = weatherData.current?.wind_direction_10m ?? null;
+        if (!time) time = weatherData.current?.time ?? null;
+      } else {
+        // Extract hourly data at target hour
+        const hourlyTimes = weatherData.hourly?.time as string[] | undefined;
+        const hourlyAirTemps = weatherData.hourly?.temperature_2m as number[] | undefined;
+        const hourlyWindSpeeds = weatherData.hourly?.wind_speed_10m as number[] | undefined;
+        const hourlyWindDirs = weatherData.hourly?.wind_direction_10m as number[] | undefined;
+        if (hourlyTimes) {
+          const hourIndex = hourlyTimes.findIndex(t => new Date(t).getHours() === targetHour);
+          if (hourIndex !== -1) {
+            airTemp = hourlyAirTemps?.[hourIndex] ?? null;
+            windSpeed = hourlyWindSpeeds?.[hourIndex] ?? null;
+            windDirection = hourlyWindDirs?.[hourIndex] ?? null;
+            if (!time) time = hourlyTimes[hourIndex] ?? null;
+          }
+        }
+      }
     }
 
     if (time && (waterTemp !== null || airTemp !== null)) {
@@ -135,13 +204,28 @@ async function fetchWeatherForTile(lat: number, lng: number): Promise<WeatherDat
   return null;
 }
 
-export function useStaticSpots() {
+// Check if datetime is within current hour
+function isCurrentHour(date: Date): boolean {
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate() &&
+    date.getHours() === now.getHours();
+}
+
+export function useStaticSpots(selectedDateTime?: Date) {
   const [spots, setSpots] = useState<FishingSpot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const currentDateTimeRef = useRef<Date>(selectedDateTime || new Date());
+
+  // Update ref when selectedDateTime changes
+  useEffect(() => {
+    currentDateTimeRef.current = selectedDateTime || new Date();
+  }, [selectedDateTime]);
 
   // Load and merge spots
-  const loadSpots = useCallback(async () => {
+  const loadSpots = useCallback(async (targetDateTime: Date) => {
     setIsLoading(true);
     try {
       const userSpots = loadUserSpots();
@@ -155,7 +239,7 @@ export function useStaticSpots() {
         // Skip webcams - they don't need weather
         if (spot.spotType === "webcam") return spot;
 
-        const cached = getCachedWeather(Number(spot.latitude), Number(spot.longitude), tileCache);
+        const cached = getCachedWeather(Number(spot.latitude), Number(spot.longitude), targetDateTime, tileCache);
         if (cached) {
           return {
             ...spot,
@@ -173,7 +257,7 @@ export function useStaticSpots() {
       setError(null);
 
       // Fetch fresh weather in background for unique tiles only
-      fetchWeatherForTiles(allSpots, tileCache);
+      fetchWeatherForTiles(allSpots, tileCache, targetDateTime);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Failed to load spots"));
     } finally {
@@ -182,7 +266,7 @@ export function useStaticSpots() {
   }, []);
 
   // Fetch weather for unique tiles only (not per spot)
-  const fetchWeatherForTiles = async (allSpots: FishingSpot[], existingCache: WeatherTileCache) => {
+  const fetchWeatherForTiles = async (allSpots: FishingSpot[], existingCache: WeatherTileCache, targetDateTime: Date) => {
     const newCache: WeatherTileCache = { ...existingCache };
     const tilesToFetch = new Set<string>();
 
@@ -192,30 +276,32 @@ export function useStaticSpots() {
 
       const lat = Number(spot.latitude);
       const lng = Number(spot.longitude);
-      const tileKey = getTileKey(lat, lng);
+      const fullKey = getFullCacheKey(lat, lng, targetDateTime);
 
       // Skip if tile is already cached and fresh
-      const cached = existingCache[tileKey];
+      const cached = existingCache[fullKey];
       if (cached && (Date.now() - cached.fetchedAt) < CACHE_DURATION) {
         continue;
       }
 
-      tilesToFetch.add(tileKey);
+      // Store tile coords for fetching (use base tile key to group)
+      tilesToFetch.add(`${lat}_${lng}`);
     }
 
     if (tilesToFetch.size === 0) return;
 
-    console.log(`Fetching weather for ${tilesToFetch.size} tiles`);
+    console.log(`Fetching weather for ${tilesToFetch.size} tiles at ${formatDateTimeKey(targetDateTime)}`);
     let updated = false;
 
-    for (const tileKey of tilesToFetch) {
-      const [latStr, lngStr] = tileKey.split("_");
+    for (const tileCoords of Array.from(tilesToFetch)) {
+      const [latStr, lngStr] = tileCoords.split("_");
       const lat = parseFloat(latStr);
       const lng = parseFloat(lngStr);
 
-      const result = await fetchWeatherForTile(lat, lng);
+      const result = await fetchWeatherForTile(lat, lng, targetDateTime);
       if (result) {
-        newCache[tileKey] = result;
+        const fullKey = getFullCacheKey(lat, lng, targetDateTime);
+        newCache[fullKey] = result;
         updated = true;
       }
 
@@ -232,8 +318,8 @@ export function useStaticSpots() {
 
         const lat = Number(spot.latitude);
         const lng = Number(spot.longitude);
-        const tileKey = getTileKey(lat, lng);
-        const cached = newCache[tileKey];
+        const fullKey = getFullCacheKey(lat, lng, targetDateTime);
+        const cached = newCache[fullKey];
 
         if (cached) {
           return {
@@ -255,12 +341,13 @@ export function useStaticSpots() {
     const userSpots = loadUserSpots();
     const tileCache = loadWeatherTileCache();
     const maxId = Math.max(...BUNDLED_SPOTS.map(s => s.id), ...userSpots.map(s => s.id), 0);
+    const targetDateTime = currentDateTimeRef.current;
 
     const lat = Number(newSpot.latitude);
     const lng = Number(newSpot.longitude);
 
-    // Check if we already have cached weather for this tile
-    const cachedWeather = getCachedWeather(lat, lng, tileCache);
+    // Check if we already have cached weather for this tile and time
+    const cachedWeather = getCachedWeather(lat, lng, targetDateTime, tileCache);
 
     const spot: FishingSpot = {
       ...newSpot,
@@ -279,11 +366,11 @@ export function useStaticSpots() {
 
     // Fetch weather if not cached
     if (!cachedWeather) {
-      fetchWeatherForTile(lat, lng).then(result => {
+      fetchWeatherForTile(lat, lng, targetDateTime).then(result => {
         if (result) {
           const cache = loadWeatherTileCache();
-          const tileKey = getTileKey(lat, lng);
-          cache[tileKey] = result;
+          const fullKey = getFullCacheKey(lat, lng, targetDateTime);
+          cache[fullKey] = result;
           saveWeatherTileCache(cache);
 
           setSpots(prev => prev.map(s =>
@@ -318,9 +405,15 @@ export function useStaticSpots() {
     return spots.find(s => s.id === id);
   }, [spots]);
 
-  // Initial load
+  // Load when selectedDateTime changes
   useEffect(() => {
-    loadSpots();
+    const targetDateTime = selectedDateTime || new Date();
+    loadSpots(targetDateTime);
+  }, [loadSpots, selectedDateTime]);
+
+  // Wrap refetch to use current datetime
+  const refetch = useCallback(() => {
+    loadSpots(currentDateTimeRef.current);
   }, [loadSpots]);
 
   return {
@@ -330,7 +423,8 @@ export function useStaticSpots() {
     addSpot,
     deleteSpot,
     getSpot,
-    refetch: loadSpots,
+    refetch,
+    selectedDateTime: currentDateTimeRef.current,
   };
 }
 

@@ -628,3 +628,131 @@ test.describe('Cluster Stacked Badges', () => {
     expect(newClusterCount < initialCount || badgeCount > 0).toBeTruthy();
   });
 });
+
+test.describe('DateTime Picker', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:5000/map');
+    await page.waitForSelector('.leaflet-container', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+  });
+
+  test('datetime picker is visible on the map', async ({ page }) => {
+    const picker = page.getByTestId('datetime-picker');
+    await expect(picker).toBeVisible();
+  });
+
+  test('datetime picker shows "Nu" (now) by default', async ({ page }) => {
+    const display = page.getByTestId('datetime-display');
+    await expect(display).toHaveText('Nu');
+  });
+
+  test('clicking datetime picker toggle expands the picker', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    const expanded = page.getByTestId('datetime-expanded');
+    await expect(expanded).toBeVisible();
+  });
+
+  test('datetime picker shows date input when expanded', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    const dateInput = page.getByTestId('datetime-date-input');
+    await expect(dateInput).toBeVisible();
+  });
+
+  test('datetime picker shows hour grid when expanded', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    const hourGrid = page.getByTestId('datetime-hour-grid');
+    await expect(hourGrid).toBeVisible();
+
+    // Should have 24 hour buttons
+    const hourButtons = hourGrid.locator('button');
+    await expect(hourButtons).toHaveCount(24);
+  });
+
+  test('selecting a different hour updates the display', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Click on hour 14 (2 PM)
+    const hour14 = page.getByTestId('datetime-hour-14');
+    await hour14.click();
+
+    // Display should now show the selected time (not "Nu" if current hour is not 14)
+    const display = page.getByTestId('datetime-display');
+    const now = new Date();
+
+    if (now.getHours() !== 14) {
+      // Should show formatted date/time instead of "Nu"
+      await expect(display).toContainText('kl. 14');
+    }
+  });
+
+  test('reset button returns to current time', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select a different hour to change from "Nu"
+    const currentHour = new Date().getHours();
+    const differentHour = (currentHour + 5) % 24;
+    const hourButton = page.getByTestId(`datetime-hour-${differentHour}`);
+    await hourButton.click();
+
+    // Display should not show "Nu" anymore
+    const display = page.getByTestId('datetime-display');
+    await expect(display).not.toHaveText('Nu');
+
+    // Click reset button
+    const resetButton = page.getByTestId('datetime-reset-full');
+    await resetButton.click();
+
+    // Should be back to "Nu"
+    await expect(display).toHaveText('Nu');
+  });
+
+  test('reset icon appears when not showing current time', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select a different hour
+    const currentHour = new Date().getHours();
+    const differentHour = (currentHour + 5) % 24;
+    const hourButton = page.getByTestId(`datetime-hour-${differentHour}`);
+    await hourButton.click();
+
+    // Close the expanded view
+    await toggle.click();
+
+    // Reset icon should be visible in the collapsed view
+    const resetIcon = page.getByTestId('datetime-reset');
+    await expect(resetIcon).toBeVisible();
+  });
+
+  test('changing datetime triggers data reload', async ({ page }) => {
+    // Wait for initial data to load
+    await page.waitForSelector('.weather-badge-marker', { timeout: 10000 });
+
+    // Open picker and change time
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select tomorrow's date
+    const dateInput = page.getByTestId('datetime-date-input');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    await dateInput.fill(tomorrowStr);
+
+    // Wait for potential reload (check loading indicator or wait)
+    await page.waitForTimeout(2000);
+
+    // Badges should still be visible (data should reload)
+    const badges = page.locator('.weather-badge-marker');
+    const badgeCount = await badges.count();
+    expect(badgeCount).toBeGreaterThan(0);
+  });
+});

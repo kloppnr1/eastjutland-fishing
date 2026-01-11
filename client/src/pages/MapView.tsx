@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "re
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
-import { Loader2, Navigation, Video, LocateFixed } from "lucide-react";
+import { Loader2, Navigation, Video, LocateFixed, Calendar, Clock, RotateCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 // Auto-refreshing webcam image component
@@ -1116,13 +1116,161 @@ function SpotSparkline({ lat, lng }: { lat: string; lng: string }) {
   );
 }
 
+// DateTime picker component for selecting weather data time
+function DateTimePicker({
+  selectedDateTime,
+  onChange,
+  onReset
+}: {
+  selectedDateTime: Date;
+  onChange: (date: Date) => void;
+  onReset: () => void;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Format date for input (YYYY-MM-DD)
+  const dateValue = useMemo(() => {
+    const year = selectedDateTime.getFullYear();
+    const month = String(selectedDateTime.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDateTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, [selectedDateTime]);
+
+  // Format time for display (HH:00)
+  const timeValue = useMemo(() => {
+    return String(selectedDateTime.getHours()).padStart(2, '0');
+  }, [selectedDateTime]);
+
+  // Check if current time is "now" (same hour)
+  const isNow = useMemo(() => {
+    const now = new Date();
+    return selectedDateTime.getFullYear() === now.getFullYear() &&
+           selectedDateTime.getMonth() === now.getMonth() &&
+           selectedDateTime.getDate() === now.getDate() &&
+           selectedDateTime.getHours() === now.getHours();
+  }, [selectedDateTime]);
+
+  // Format display text
+  const displayText = useMemo(() => {
+    if (isNow) return "Nu";
+    const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+    const dayName = dayNames[selectedDateTime.getDay()];
+    const day = selectedDateTime.getDate();
+    const month = selectedDateTime.getMonth() + 1;
+    const hour = String(selectedDateTime.getHours()).padStart(2, '0');
+    return `${dayName} ${day}/${month} kl. ${hour}`;
+  }, [selectedDateTime, isNow]);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [year, month, day] = e.target.value.split('-').map(Number);
+    const newDate = new Date(selectedDateTime);
+    newDate.setFullYear(year, month - 1, day);
+    onChange(newDate);
+  };
+
+  const handleHourChange = (hour: number) => {
+    const newDate = new Date(selectedDateTime);
+    newDate.setHours(hour, 0, 0, 0);
+    onChange(newDate);
+  };
+
+  // Generate hour options
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  return (
+    <div className="absolute top-6 left-6 z-[1000]" data-testid="datetime-picker">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Collapsed view - just shows current selection */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 transition-colors w-full"
+          data-testid="datetime-toggle"
+        >
+          <Calendar className="w-4 h-4 text-primary" />
+          <span className="font-medium text-sm" data-testid="datetime-display">{displayText}</span>
+          {!isNow && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReset();
+              }}
+              className="ml-2 p-1 hover:bg-gray-200 rounded-full"
+              title="Nulstil til nu"
+              data-testid="datetime-reset"
+            >
+              <RotateCcw className="w-3 h-3 text-gray-500" />
+            </button>
+          )}
+        </button>
+
+        {/* Expanded view - date and time picker */}
+        {isExpanded && (
+          <div className="border-t border-gray-100 p-3" data-testid="datetime-expanded">
+            {/* Date picker */}
+            <div className="mb-3">
+              <label className="text-xs text-gray-500 block mb-1">Dato</label>
+              <input
+                type="date"
+                value={dateValue}
+                onChange={handleDateChange}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                data-testid="datetime-date-input"
+              />
+            </div>
+
+            {/* Hour picker - scrollable grid */}
+            <div className="mb-2">
+              <label className="text-xs text-gray-500 block mb-1">Klokkeslæt</label>
+              <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto" data-testid="datetime-hour-grid">
+                {hours.map(hour => (
+                  <button
+                    key={hour}
+                    onClick={() => handleHourChange(hour)}
+                    className={`py-1 px-2 text-xs rounded ${
+                      parseInt(timeValue) === hour
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    data-testid={`datetime-hour-${hour}`}
+                  >
+                    {String(hour).padStart(2, '0')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reset button */}
+            <button
+              onClick={() => {
+                onReset();
+                setIsExpanded(false);
+              }}
+              className="w-full py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
+              data-testid="datetime-reset-full"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Nulstil til nu
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function MapView() {
-  const { data: spots, isLoading, error } = useSpots();
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
+  const { data: spots, isLoading, error } = useSpots(selectedDateTime);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(10);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const searchString = useSearch();
+
+  // Reset datetime to current time
+  const handleResetDateTime = useCallback(() => {
+    setSelectedDateTime(new Date());
+  }, []);
 
   // Calculate badge scale based on zoom (slightly smaller when zoomed out)
   const badgeScale = useMemo(() => {
@@ -1302,6 +1450,13 @@ export default function MapView() {
             )}
           </MapContainer>
         )}
+
+        {/* DateTime picker */}
+        <DateTimePicker
+          selectedDateTime={selectedDateTime}
+          onChange={setSelectedDateTime}
+          onReset={handleResetDateTime}
+        />
 
         {/* Spot count */}
         <div className="absolute top-6 right-6 z-[1000]">

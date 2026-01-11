@@ -6,8 +6,8 @@ import { useStaticSpots, useStaticSpot } from "./use-static-spots";
 const STATIC_MODE = import.meta.env.VITE_STATIC_MODE === "true";
 
 // GET /api/spots
-export function useSpots() {
-  const staticData = useStaticSpots();
+export function useSpots(selectedDateTime?: Date) {
+  const staticData = useStaticSpots(selectedDateTime);
 
   const serverQuery = useQuery({
     queryKey: [api.spots.list.path],
@@ -28,6 +28,7 @@ export function useSpots() {
       addSpot: staticData.addSpot,
       deleteSpot: staticData.deleteSpot,
       refetch: staticData.refetch,
+      selectedDateTime: staticData.selectedDateTime,
     };
   }
 
