@@ -98,7 +98,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const backOffset = Math.round(12 * scale);
   const middleOffset = Math.round(10 * scale);
   // Fixed width for all badges to ensure consistent stacking
-  const badgeWidth = Math.round(70 * scale);
+  // Width accommodates: water "10.5-12.3°" and wind "10-15"
+  const badgeWidth = Math.round(85 * scale);
 
   return divIcon({
     html: `

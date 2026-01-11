@@ -433,6 +433,43 @@ test.describe('Cluster Stacked Badges', () => {
     }
   });
 
+  test('cluster badge width accommodates content without overflow', async ({ page }) => {
+    const clusters = page.locator('.cluster-icon');
+    const count = await clusters.count();
+
+    if (count === 0) {
+      test.skip();
+      return;
+    }
+
+    const cluster = clusters.first();
+    await expect(cluster).toBeVisible();
+
+    // Get the front badge (white background)
+    const frontBadge = cluster.locator('div[style*="background: white"]').first();
+    const badgeBox = await frontBadge.boundingBox();
+
+    if (!badgeBox) {
+      test.skip();
+      return;
+    }
+
+    // Get all text content spans in the badge
+    const textSpans = cluster.locator('span[style*="font-weight: 700"]');
+    const spanCount = await textSpans.count();
+
+    for (let i = 0; i < spanCount; i++) {
+      const span = textSpans.nth(i);
+      const spanBox = await span.boundingBox();
+
+      if (spanBox) {
+        // Text should not overflow badge (with some padding tolerance)
+        expect(spanBox.x).toBeGreaterThanOrEqual(badgeBox.x - 2);
+        expect(spanBox.x + spanBox.width).toBeLessThanOrEqual(badgeBox.x + badgeBox.width + 2);
+      }
+    }
+  });
+
   test('stacked badges have same size as front badge', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
