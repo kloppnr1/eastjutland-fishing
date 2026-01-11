@@ -304,13 +304,17 @@ const createSpotIcon = (
   return createWeatherBadge(waterTemp, windSpeed, windDir, scale);
 };
 
-// Generate static map tile URL for a location
+// Convert lat/lng to tile coordinates at a given zoom level
+const latLngToTile = (lat: number, lng: number, zoom: number) => {
+  const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom));
+  const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
+  return { x, y, z: zoom };
+};
+
+// Generate static map tile URL for a location (uses same tiles as Leaflet map)
 const getStaticMapUrl = (lat: number, lng: number) => {
-  // Calculate bounding box around the point (roughly 300m)
-  const delta = 0.002; // ~200m at this latitude for tighter zoom
-  const bbox = `${lng - delta},${lat - delta * 0.5},${lng + delta},${lat + delta * 0.5}`;
-  // Request high resolution (512x200) for retina displays
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${bbox}&bboxSR=4326&size=512,200&imageSR=4326&format=jpg&f=image`;
+  const { x, y, z } = latLngToTile(lat, lng, 15); // zoom 15 for good detail
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 };
 
 // Expanded badge when spot is selected - shows full info
@@ -403,7 +407,7 @@ const createExpandedBadge = (
             overflow: hidden;
             margin-bottom: 10px;
           ">
-            <img src="${mapTileUrl}" alt="Kort" style="width: 100%; height: 100%; object-fit: cover;" />
+            <img src="${mapTileUrl}" alt="Kort" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
           </div>
 
           <!-- Stats row -->
