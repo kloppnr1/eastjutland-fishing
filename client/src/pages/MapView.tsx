@@ -526,14 +526,15 @@ function MapClickHandler({
 }) {
   const map = useMapEvents({
     click: (e) => {
-      // Check if a popup is currently open
+      // Check if a popup or expanded badge is currently open
       const popupOpen = document.querySelector('.leaflet-popup') !== null;
+      const expandedBadgeOpen = document.querySelector('.expanded-badge-marker') !== null;
 
       map.closePopup(); // Close any open spot popup
       onClearSelection(); // Clear selected spot
 
-      // Only show temp badge if no popup was open
-      if (!popupOpen) {
+      // Only show temp badge if nothing was open
+      if (!popupOpen && !expandedBadgeOpen) {
         onMapClick(e.latlng.lat, e.latlng.lng);
       }
     },

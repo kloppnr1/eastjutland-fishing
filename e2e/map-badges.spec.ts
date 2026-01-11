@@ -90,7 +90,7 @@ test.describe('Map Badge Click Detection', () => {
     await expect(popup).toBeVisible({ timeout: 3000 });
   });
 
-  test('clicking map with popup open closes popup without showing temp badge', async ({ page }) => {
+  test('clicking map with webcam popup open closes popup without showing temp badge', async ({ page }) => {
     // Find a webcam marker
     const webcam = page.locator('.webcam-marker').first();
 
@@ -123,6 +123,31 @@ test.describe('Map Badge Click Detection', () => {
     await expect(popup).not.toBeVisible();
 
     // Temp badge should NOT appear (this was the bug)
+    const tempBadge = page.locator('.clicked-location-marker');
+    await expect(tempBadge).not.toBeVisible();
+  });
+
+  test('clicking map with fish spot expanded closes badge without showing temp badge', async ({ page }) => {
+    // Find a fish spot badge
+    const badge = page.locator('.weather-badge-marker').first();
+    await expect(badge).toBeVisible();
+
+    // Click to expand the badge
+    await badge.locator('div[style*="background: white"]').first().click();
+
+    // Wait for expanded badge
+    const expandedBadge = page.locator('.expanded-badge-marker');
+    await expect(expandedBadge).toBeVisible({ timeout: 3000 });
+
+    // Click on empty map area
+    const map = page.locator('.leaflet-container');
+    await map.click({ position: { x: 50, y: 50 } });
+    await page.waitForTimeout(500);
+
+    // Expanded badge should be closed
+    await expect(expandedBadge).not.toBeVisible();
+
+    // Temp badge should NOT appear
     const tempBadge = page.locator('.clicked-location-marker');
     await expect(tempBadge).not.toBeVisible();
   });
