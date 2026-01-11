@@ -95,8 +95,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
 
   // Scaled positioning values - larger offsets for more visible stacking
   const badgeBottom = Math.round(27 * scale);
-  const backOffset = Math.round(12 * scale);
-  const middleOffset = Math.round(10 * scale);
+  const backOffset = Math.round(18 * scale);
+  const middleOffset = Math.round(14 * scale);
 
   return divIcon({
     html: `
