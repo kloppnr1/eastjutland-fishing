@@ -44,6 +44,7 @@ const createWeatherBadge = (
     className: "weather-badge-marker",
     html: `
       <div style="display: flex; flex-direction: column; align-items: center;">
+        <!-- Compass badge with wind arrow -->
         <div style="position: relative; width: 46px; height: 46px;">
           <!-- Wind direction pointer (behind circle) -->
           ${windDir != null ? `
@@ -90,11 +91,21 @@ const createWeatherBadge = (
             <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
           </div>
         </div>
+        <!-- Stem pointing to exact location -->
+        <div style="width: 2px; height: 12px; background: ${waterColor};"></div>
+        <!-- Anchor point dot -->
+        <div style="
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: ${waterColor};
+          box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
+        "></div>
       </div>
     `,
-    iconSize: [54, 54],
-    iconAnchor: [27, 27],
-    popupAnchor: [0, -27],
+    iconSize: [66, 78],
+    iconAnchor: [33, 78],
+    popupAnchor: [0, -78],
   });
 };
 
