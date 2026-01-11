@@ -13,56 +13,21 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Custom marker icon for map preview
+// Simple dot marker for map preview
 const createSpotMarkerIcon = () => {
   return divIcon({
     className: "spot-preview-marker",
     html: `
-      <div style="position: relative; width: 40px; height: 40px;">
-        <div style="
-          position: absolute;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #3b82f6;
-          box-shadow: 0 0 0 3px white, 0 2px 8px rgba(0,0,0,0.4);
-        "></div>
-        <div style="
-          position: absolute;
-          bottom: 12px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 3px;
-          height: 16px;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        "></div>
-        <div style="
-          position: absolute;
-          bottom: 28px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #3b82f6;
-          border-radius: 50%;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-        ">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-        </div>
-      </div>
+      <div style="
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3b82f6;
+        box-shadow: 0 0 0 3px white, 0 2px 8px rgba(0,0,0,0.4);
+      "></div>
     `,
-    iconSize: [40, 52],
-    iconAnchor: [20, 52],
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
   });
 };
 
@@ -90,7 +55,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
       <div className="h-64 rounded-xl overflow-hidden">
         <MapContainer
           center={[lat, lng]}
-          zoom={13}
+          zoom={15}
           zoomControl={false}
           dragging={false}
           scrollWheelZoom={false}
