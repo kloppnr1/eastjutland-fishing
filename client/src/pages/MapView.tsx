@@ -1,6 +1,7 @@
 import { useSpots } from "@/hooks/use-spots";
 import { Header } from "@/components/Header";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
 import { Loader2, Navigation, Video } from "lucide-react";
@@ -29,13 +30,52 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
+// Create cluster icon showing count and average temp
+const createClusterIcon = (cluster: any) => {
+  const markers = cluster.getAllChildMarkers();
+  const count = markers.length;
+
+  // Calculate average water temp from clustered spots
+  let totalTemp = 0;
+  let tempCount = 0;
+
+  // We can't easily get spot data from markers, so just show count
+  const size = Math.min(50, 30 + count * 3);
+
+  return divIcon({
+    html: `
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background: linear-gradient(135deg, #3b82f6 0%, #14b8a6 100%);
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: ${size * 0.4}px;
+      ">
+        ${count}
+      </div>
+    `,
+    className: "cluster-icon",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
 // Compass-style round badge - shows water temp + wind speed with direction pointer
 // seaDirection: 0-360 degrees indicating where the sea is (badge points away from it)
+// scale: 0-1 for zoom-based scaling
 const createWeatherBadge = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  seaDirection: number | null
+  seaDirection: number | null,
+  scale: number = 1
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
@@ -48,10 +88,14 @@ const createWeatherBadge = (
   // Wind arrow needs to account for badge rotation
   const arrowRotation = windDir != null ? windDir + 180 - badgeRotation : 0;
 
+  // Apply scale to entire badge
+  const scaledSize = Math.round(100 * scale);
+  const scaledAnchorY = Math.round(95 * scale);
+
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <div style="position: relative; width: 100px; height: 100px;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
@@ -142,9 +186,9 @@ const createWeatherBadge = (
         </div>
       </div>
     `,
-    iconSize: [100, 100],
-    iconAnchor: [50, 95],
-    popupAnchor: [0, -85],
+    iconSize: [scaledSize, scaledSize],
+    iconAnchor: [scaledSize / 2, scaledAnchorY],
+    popupAnchor: [0, -Math.round(85 * scale)],
   });
 };
 
@@ -153,9 +197,10 @@ const createSpotIcon = (
   waterTemp: number | null,
   windSpeed: number | null,
   windDir: number | null,
-  seaDirection: number | null
+  seaDirection: number | null,
+  scale: number = 1
 ) => {
-  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection);
+  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection, scale);
 };
 
 // Webcam marker icon - just camera icon
@@ -216,6 +261,21 @@ function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
   useEffect(() => {
     map.flyTo([lat, lng], 14, { duration: 1.5 });
   }, [map, lat, lng]);
+
+  return null;
+}
+
+// Component to track zoom level
+function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
+  const map = useMapEvents({
+    zoomend: () => {
+      onZoomChange(map.getZoom());
+    },
+  });
+
+  useEffect(() => {
+    onZoomChange(map.getZoom());
+  }, [map, onZoomChange]);
 
   return null;
 }
@@ -717,7 +777,14 @@ export default function MapView() {
   const { data: spots, isLoading, error } = useSpots();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentZoom, setCurrentZoom] = useState(10);
   const searchString = useSearch();
+
+  // Calculate badge scale based on zoom (smaller when zoomed out)
+  const badgeScale = useMemo(() => {
+    // At zoom 10 or below: 0.6 scale, at zoom 14+: 1.0 scale
+    return Math.min(1, Math.max(0.6, (currentZoom - 8) / 6));
+  }, [currentZoom]);
 
   // Parse URL params for target location
   const targetLocation = useMemo(() => {
@@ -781,116 +848,121 @@ export default function MapView() {
               pane="overlayPane"
             />
             <MapClickHandler onMapClick={handleMapClick} />
+            <ZoomTracker onZoomChange={setCurrentZoom} />
             {targetLocation && (
               <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
             )}
 
-            {/* Existing spots */}
-            {spots?.map((spot) => {
-              const isWebcam = spot.spotType === "webcam";
+            {/* Webcam spots (not clustered) */}
+            {spots?.filter(spot => spot.spotType === "webcam").map((spot) => (
+              <Marker
+                key={`webcam-${spot.id}`}
+                position={[Number(spot.latitude), Number(spot.longitude)]}
+                icon={createWebcamIcon()}
+                eventHandlers={{
+                  click: () => setTempBadgeCoords(null),
+                }}
+              >
+                <Popup maxWidth={320} minWidth={280} closeButton={false}>
+                  <div>
+                    <Link href={`/spot/${spot.id}`}>
+                      <h3 className="font-bold text-sm mb-2 text-center text-purple-700 hover:text-purple-500 transition-colors cursor-pointer flex items-center justify-center gap-2">
+                        <Video className="w-4 h-4" />
+                        {spot.name}
+                      </h3>
+                    </Link>
+                    {spot.webcamUrl && (
+                      <div className="rounded-lg overflow-hidden aspect-video">
+                        {/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
+                          <AutoRefreshImage
+                            src={spot.webcamUrl}
+                            alt={`Webcam: ${spot.name}`}
+                            className="w-full h-full object-cover"
+                            interval={5000}
+                          />
+                        ) : (
+                          <iframe
+                            src={spot.webcamUrl}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allowFullScreen
+                            title={`Webcam: ${spot.name}`}
+                          />
+                        )}
+                      </div>
+                    )}
+                    {spot.description && (
+                      <p className="text-xs text-gray-500 mt-2 text-center">{spot.description}</p>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
-              return (
+            {/* Fishing spots (clustered) */}
+            <MarkerClusterGroup
+              chunkedLoading
+              iconCreateFunction={createClusterIcon}
+              maxClusterRadius={60}
+              spiderfyOnMaxZoom={true}
+              showCoverageOnHover={false}
+            >
+              {spots?.filter(spot => spot.spotType !== "webcam").map((spot) => (
                 <Marker
-                  key={`${spot.id}-${spot.currentWaterTemp}-${spot.currentAirTemp}-${spot.windSpeed}`}
+                  key={`fish-${spot.id}-${spot.currentWaterTemp}-${spot.windSpeed}-${currentZoom}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
-                  icon={isWebcam
-                    ? createWebcamIcon()
-                    : createSpotIcon(spot.currentWaterTemp, spot.windSpeed, spot.windDirection, spot.seaDirection)
-                  }
+                  icon={createSpotIcon(spot.currentWaterTemp, spot.windSpeed, spot.windDirection, spot.seaDirection, badgeScale)}
                   eventHandlers={{
                     click: () => setTempBadgeCoords(null),
                   }}
                 >
                   <Popup maxWidth={320} minWidth={280} closeButton={false}>
-                    {isWebcam ? (
-                      /* Webcam popup - simplified view */
-                      <div>
-                        <Link href={`/spot/${spot.id}`}>
-                          <h3 className="font-bold text-sm mb-2 text-center text-purple-700 hover:text-purple-500 transition-colors cursor-pointer flex items-center justify-center gap-2">
-                            <Video className="w-4 h-4" />
-                            {spot.name}
-                          </h3>
-                        </Link>
-                        {spot.webcamUrl && (
-                          <div className="rounded-lg overflow-hidden aspect-video">
-                            {/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
-                              <AutoRefreshImage
-                                src={spot.webcamUrl}
-                                alt={`Webcam: ${spot.name}`}
-                                className="w-full h-full object-cover"
-                                interval={5000}
-                              />
-                            ) : (
-                              <iframe
-                                src={spot.webcamUrl}
-                                className="w-full h-full"
-                                frameBorder="0"
-                                allowFullScreen
-                                title={`Webcam: ${spot.name}`}
-                              />
+                    <div>
+                      <Link href={`/spot/${spot.id}`}>
+                        <h3 className="font-bold text-sm mb-2 text-center text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
+                          {spot.name}
+                        </h3>
+                      </Link>
+                      {spot.imageUrl && (
+                        <div className="h-32 mb-2 rounded-lg overflow-hidden">
+                          <img
+                            src={resolveImageUrl(spot.imageUrl) || undefined}
+                            alt={spot.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-1.5 text-center">
+                        <div className="bg-blue-50 rounded-md py-1.5 px-1">
+                          <div className="text-lg font-bold text-blue-600">
+                            {spot.currentWaterTemp != null ? `${spot.currentWaterTemp.toFixed(1)}°` : "--"}
+                          </div>
+                          <div className="text-[9px] text-gray-500">Vand</div>
+                        </div>
+                        <div className="bg-orange-50 rounded-md py-1.5 px-1">
+                          <div className="text-lg font-bold text-orange-600">
+                            {spot.currentAirTemp != null ? `${spot.currentAirTemp.toFixed(1)}°` : "--"}
+                          </div>
+                          <div className="text-[9px] text-gray-500">Luft</div>
+                        </div>
+                        <div className="bg-gray-50 rounded-md py-1.5 px-1">
+                          <div className="text-lg font-bold text-gray-700 flex items-center justify-center gap-0.5">
+                            {spot.windSpeed != null ? spot.windSpeed.toFixed(0) : "--"}
+                            {spot.windDirection != null && (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${spot.windDirection + 180}deg)` }} className="text-gray-400">
+                                <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
+                              </svg>
                             )}
                           </div>
-                        )}
-                        {spot.description && (
-                          <p className="text-xs text-gray-500 mt-2 text-center">{spot.description}</p>
-                        )}
-                      </div>
-                    ) : (
-                      /* Fishing spot popup - full view */
-                      <div>
-                        {/* Spot Name */}
-                        <Link href={`/spot/${spot.id}`}>
-                          <h3 className="font-bold text-sm mb-2 text-center text-gray-800 hover:text-blue-600 transition-colors cursor-pointer">
-                            {spot.name}
-                          </h3>
-                        </Link>
-
-                        {/* Spot Image */}
-                        {spot.imageUrl && (
-                          <div className="h-32 mb-2 rounded-lg overflow-hidden">
-                            <img
-                              src={resolveImageUrl(spot.imageUrl) || undefined}
-                              alt={spot.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-
-                        {/* Weather Data */}
-                        <div className="grid grid-cols-3 gap-1.5 text-center">
-                          <div className="bg-blue-50 rounded-md py-1.5 px-1">
-                            <div className="text-lg font-bold text-blue-600">
-                              {spot.currentWaterTemp != null ? `${spot.currentWaterTemp.toFixed(1)}°` : "--"}
-                            </div>
-                            <div className="text-[9px] text-gray-500">Vand</div>
-                          </div>
-                          <div className="bg-orange-50 rounded-md py-1.5 px-1">
-                            <div className="text-lg font-bold text-orange-600">
-                              {spot.currentAirTemp != null ? `${spot.currentAirTemp.toFixed(1)}°` : "--"}
-                            </div>
-                            <div className="text-[9px] text-gray-500">Luft</div>
-                          </div>
-                          <div className="bg-gray-50 rounded-md py-1.5 px-1">
-                            <div className="text-lg font-bold text-gray-700 flex items-center justify-center gap-0.5">
-                              {spot.windSpeed != null ? spot.windSpeed.toFixed(0) : "--"}
-                              {spot.windDirection != null && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: `rotate(${spot.windDirection + 180}deg)` }} className="text-gray-400">
-                                  <path d="M12 2L12 22M12 2L6 8M12 2L18 8"/>
-                                </svg>
-                              )}
-                            </div>
-                            <div className="text-[9px] text-gray-500">m/s</div>
-                          </div>
+                          <div className="text-[9px] text-gray-500">m/s</div>
                         </div>
-
-                        {/* Sparkline Graph */}
-                        <SpotSparkline lat={spot.latitude} lng={spot.longitude} />
                       </div>
-                    )}
+                      <SpotSparkline lat={spot.latitude} lng={spot.longitude} />
+                    </div>
                   </Popup>
                 </Marker>
-              );
-            })}
+              ))}
+            </MarkerClusterGroup>
 
             {/* Temperature badge for clicked location */}
             {tempBadgeCoords && (
