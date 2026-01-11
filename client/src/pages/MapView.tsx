@@ -924,8 +924,8 @@ export default function MapView() {
 
   // Calculate badge scale based on zoom (slightly smaller when zoomed out)
   const badgeScale = useMemo(() => {
-    // At zoom 9 or below: 0.75 scale, at zoom 13+: 1.0 scale
-    return Math.min(1, Math.max(0.75, (currentZoom - 9) / 4));
+    // At zoom 8 or below: 0.75 scale, at zoom 12+: 1.0 scale
+    return Math.min(1, Math.max(0.75, (currentZoom - 8) / 4));
   }, [currentZoom]);
 
   // Calculate stem properties for nearby spots to avoid overlap
