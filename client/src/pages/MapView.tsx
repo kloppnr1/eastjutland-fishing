@@ -457,15 +457,15 @@ const createWebcamIcon = (scale: number = 1) => {
   return divIcon({
     className: "webcam-marker",
     html: `
-      <div style="position: relative; width: 20px; height: 20px; transform: scale(${scale}); transform-origin: center bottom; pointer-events: none; overflow: visible;">
+      <div style="position: relative; width: 20px; height: 20px; transform: scale(${scale * 1.3}); transform-origin: center bottom; pointer-events: none; overflow: visible;">
         <!-- Fixed anchor dot at center-bottom -->
         <div style="
           position: absolute;
           bottom: 5px;
           left: 50%;
           transform: translateX(-50%);
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           background: #7c3aed;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
