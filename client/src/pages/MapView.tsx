@@ -68,161 +68,73 @@ const createClusterIcon = (cluster: any) => {
 };
 
 // Calculate stem properties for spots to avoid overlap
-// Uses greedy placement algorithm that considers actual badge positions
+// Uses spatial grid approach - nearby spots get different direction/length combos
 interface StemProps {
   stemLength: number;
   overrideDirection: number | null;
 }
 
-interface PlacedBadge {
-  anchorLat: number;
-  anchorLng: number;
-  badgeLat: number;
-  badgeLng: number;
-}
-
 function calculateStemProps(
-  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string; seaDirection?: number | null }>,
-  baseLength: number = 20
+  spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string; seaDirection?: number | null }>
 ): Map<number, StemProps> {
   const stemProps = new Map<number, StemProps>();
-  const fishingSpots = spots.filter(s => s.spotType !== "webcam");
-  const webcamSpots = spots.filter(s => s.spotType === "webcam");
 
-  if (fishingSpots.length === 0) return stemProps;
+  if (spots.length === 0) return stemProps;
 
-  // Configuration options - 12 directions × 4 lengths = 48 possible positions per badge
-  const DIRECTIONS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
-  const LENGTHS = [20, 50, 80, 110];
+  // Available configurations - 8 directions × 4 lengths = 32 unique positions
+  const DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315];
+  const LENGTHS = [15, 40, 65, 90];
 
-  // Scale: approximate degrees per pixel of stem (depends on zoom, this is a rough average)
-  const STEM_SCALE = 0.00008;
-  // Badge radius in degrees (badge is ~46px wide)
-  const BADGE_RADIUS = 23 * STEM_SCALE;
-  // Webcam icon radius (smaller, ~40px tall including stem)
-  const WEBCAM_RADIUS = 20 * STEM_SCALE;
-
-  // Nearby threshold for considering overlap
-  const NEARBY_THRESHOLD = 0.25; // ~25km
-
-  // Track placed badge/icon centers - start with webcams as fixed obstacles
-  const placed: PlacedBadge[] = [];
-
-  // Add webcam positions as obstacles (they have fixed icons pointing up)
-  for (const webcam of webcamSpots) {
-    const lat = parseFloat(webcam.latitude);
-    const lng = parseFloat(webcam.longitude);
-    // Webcam icon is centered above its anchor point (stem + icon height ~35px up)
-    placed.push({
-      anchorLat: lat,
-      anchorLng: lng,
-      badgeLat: lat + 35 * STEM_SCALE,
-      badgeLng: lng,
-    });
-  }
-
-  // Calculate neighbor count for each spot to determine processing order
-  // Include both fishing spots AND webcams as neighbors
-  const spotWithDensity = fishingSpots.map(spot => {
+  // Process ALL spots (fishing + webcams)
+  for (const spot of spots) {
     const lat = parseFloat(spot.latitude);
     const lng = parseFloat(spot.longitude);
-    let neighborCount = 0;
 
-    // Count nearby fishing spots
-    for (const other of fishingSpots) {
+    // Find all nearby spots sorted by distance
+    const neighbors: Array<{ id: number; distance: number }> = [];
+
+    for (const other of spots) {
       if (other.id === spot.id) continue;
       const d = Math.sqrt(
         Math.pow(lat - parseFloat(other.latitude), 2) +
         Math.pow(lng - parseFloat(other.longitude), 2)
       );
-      if (d < NEARBY_THRESHOLD) neighborCount++;
+      if (d < 0.15) { // ~15km
+        neighbors.push({ id: other.id, distance: d });
+      }
     }
 
-    // Count nearby webcams
-    for (const webcam of webcamSpots) {
-      const d = Math.sqrt(
-        Math.pow(lat - parseFloat(webcam.latitude), 2) +
-        Math.pow(lng - parseFloat(webcam.longitude), 2)
-      );
-      if (d < NEARBY_THRESHOLD) neighborCount++;
-    }
+    // Sort by distance (closest first)
+    neighbors.sort((a, b) => a.distance - b.distance);
 
-    return { spot, neighborCount, lat, lng };
-  });
-
-  // Process isolated spots first (they keep their sea direction), then crowded ones
-  spotWithDensity.sort((a, b) => a.neighborCount - b.neighborCount);
-
-  for (const { spot, neighborCount, lat, lng } of spotWithDensity) {
-    // Find nearby already-placed badges
-    const nearbyBadges = placed.filter(b => {
-      const dist = Math.sqrt(
-        Math.pow(lat - b.anchorLat, 2) + Math.pow(lng - b.anchorLng, 2)
-      );
-      return dist < NEARBY_THRESHOLD;
-    });
-
-    if (nearbyBadges.length === 0) {
-      // No nearby badges - use sea direction or default
-      const defaultDir = spot.seaDirection != null ? (spot.seaDirection + 180) % 360 : 0;
-      stemProps.set(spot.id, { stemLength: baseLength, overrideDirection: null });
-
-      const rad = (defaultDir * Math.PI) / 180;
-      placed.push({
-        anchorLat: lat,
-        anchorLng: lng,
-        badgeLat: lat + baseLength * STEM_SCALE * Math.cos(rad),
-        badgeLng: lng + baseLength * STEM_SCALE * Math.sin(rad),
-      });
+    if (neighbors.length === 0) {
+      // No neighbors - use sea direction (or default for webcams)
+      stemProps.set(spot.id, { stemLength: 15, overrideDirection: null });
     } else {
-      // Find the configuration that maximizes minimum distance to nearby badge centers
-      let bestDir = 0;
-      let bestLen = LENGTHS[0];
-      let bestMinDist = -Infinity;
-
-      for (const dir of DIRECTIONS) {
-        for (const len of LENGTHS) {
-          const rad = (dir * Math.PI) / 180;
-          const badgeLat = lat + len * STEM_SCALE * Math.cos(rad);
-          const badgeLng = lng + len * STEM_SCALE * Math.sin(rad);
-
-          // Calculate minimum distance to any nearby badge center
-          let minDist = Infinity;
-          for (const other of nearbyBadges) {
-            const dist = Math.sqrt(
-              Math.pow(badgeLat - other.badgeLat, 2) +
-              Math.pow(badgeLng - other.badgeLng, 2)
-            );
-            // Subtract badge radii to get edge-to-edge distance
-            const edgeDist = dist - 2 * BADGE_RADIUS;
-            minDist = Math.min(minDist, edgeDist);
-          }
-
-          // Also penalize being too close to anchor points of nearby spots
-          for (const other of nearbyBadges) {
-            const distToAnchor = Math.sqrt(
-              Math.pow(badgeLat - other.anchorLat, 2) +
-              Math.pow(badgeLng - other.anchorLng, 2)
-            );
-            minDist = Math.min(minDist, distToAnchor - BADGE_RADIUS);
-          }
-
-          if (minDist > bestMinDist) {
-            bestMinDist = minDist;
-            bestDir = dir;
-            bestLen = len;
-          }
-        }
+      // Count how many neighbors have lower IDs (determines our "slot")
+      let slot = 0;
+      for (const n of neighbors) {
+        if (n.id < spot.id) slot++;
       }
 
-      stemProps.set(spot.id, { stemLength: bestLen, overrideDirection: bestDir });
+      // Pick direction and length based on slot
+      const dirIndex = slot % DIRECTIONS.length;
+      const lenIndex = Math.floor(slot / DIRECTIONS.length) % LENGTHS.length;
 
-      const rad = (bestDir * Math.PI) / 180;
-      placed.push({
-        anchorLat: lat,
-        anchorLng: lng,
-        badgeLat: lat + bestLen * STEM_SCALE * Math.cos(rad),
-        badgeLng: lng + bestLen * STEM_SCALE * Math.sin(rad),
+      const closestDist = neighbors[0]?.distance || 1;
+      let direction = DIRECTIONS[dirIndex];
+      let length = LENGTHS[lenIndex];
+
+      // If extremely close (<3km), use opposite quadrants
+      if (closestDist < 0.03) {
+        const quadrant = (spot.id % 4);
+        direction = quadrant * 90 + 45; // 45, 135, 225, 315
+        length = LENGTHS[(spot.id % LENGTHS.length)];
+      }
+
+      stemProps.set(spot.id, {
+        stemLength: length,
+        overrideDirection: direction
       });
     }
   }
@@ -372,39 +284,75 @@ const createSpotIcon = (
   return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection, scale, stemLength, overrideDirection);
 };
 
-// Webcam marker icon - just camera icon
-const createWebcamIcon = () => {
+// Webcam marker icon - with rotation and stem length support
+const createWebcamIcon = (
+  scale: number = 1,
+  stemLength: number = 15,
+  overrideDirection: number | null = null
+) => {
+  const rotation = overrideDirection ?? 0;
+  const contentRotation = -rotation;
+
   return divIcon({
     className: "webcam-marker",
     html: `
-      <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="position: relative; width: 100px; height: 100px; transform: scale(${scale}); transform-origin: center bottom;">
+        <!-- Fixed anchor dot at center-bottom -->
         <div style="
-          background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-          padding: 10px;
-          border-radius: 50%;
-          box-shadow: 0 3px 10px rgba(124, 58, 237, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-        ">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
-          </svg>
-        </div>
-        <div style="width: 2px; height: 10px; background: #7c3aed;"></div>
-        <div style="
+          position: absolute;
+          bottom: 5px;
+          left: 50%;
+          transform: translateX(-50%);
           width: 8px;
           height: 8px;
           border-radius: 50%;
           background: #7c3aed;
-          box-shadow: 0 0 0 2px white;
+          box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
+          z-index: 10;
         "></div>
+        <!-- Rotating icon and stem -->
+        <div style="
+          position: absolute;
+          bottom: 9px;
+          left: 50%;
+          transform-origin: bottom center;
+          transform: translateX(-50%) rotate(${rotation}deg);
+        ">
+          <!-- Stem -->
+          <div style="
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: ${stemLength}px;
+            background: #7c3aed;
+          "></div>
+          <!-- Icon container -->
+          <div style="
+            position: absolute;
+            bottom: ${stemLength}px;
+            left: 50%;
+            transform: translateX(-50%) rotate(${contentRotation}deg);
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 3px 10px rgba(124, 58, 237, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+            </svg>
+          </div>
+        </div>
       </div>
     `,
-    iconSize: [40, 58],
-    iconAnchor: [20, 58],
-    popupAnchor: [0, -58],
+    iconSize: [100, 100],
+    iconAnchor: [50, 95],
+    popupAnchor: [0, -85],
   });
 };
 
@@ -1031,9 +979,13 @@ export default function MapView() {
             {/* Webcam spots (not clustered) */}
             {spots?.filter(spot => spot.spotType === "webcam").map((spot) => (
               <Marker
-                key={`webcam-${spot.id}`}
+                key={`webcam-${spot.id}-${currentZoom}`}
                 position={[Number(spot.latitude), Number(spot.longitude)]}
-                icon={createWebcamIcon()}
+                icon={createWebcamIcon(
+                  badgeScale,
+                  stemProps.get(spot.id)?.stemLength || 15,
+                  stemProps.get(spot.id)?.overrideDirection ?? null
+                )}
                 eventHandlers={{
                   click: () => setTempBadgeCoords(null),
                 }}
