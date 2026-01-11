@@ -90,6 +90,43 @@ test.describe('Map Badge Click Detection', () => {
     await expect(popup).toBeVisible({ timeout: 3000 });
   });
 
+  test('clicking map with popup open closes popup without showing temp badge', async ({ page }) => {
+    // Find a webcam marker
+    const webcam = page.locator('.webcam-marker').first();
+
+    const count = await webcam.count();
+    if (count === 0) {
+      test.skip();
+      return;
+    }
+
+    const box = await webcam.boundingBox();
+    const viewport = page.viewportSize();
+    if (!box || !viewport || box.x < 0 || box.y < 0 ||
+        box.x + box.width > viewport.width ||
+        box.y + box.height > viewport.height) {
+      test.skip();
+      return;
+    }
+
+    // Click webcam to open popup
+    await webcam.click();
+    const popup = page.locator('.leaflet-popup');
+    await expect(popup).toBeVisible({ timeout: 3000 });
+
+    // Click on empty map area (away from the popup)
+    const map = page.locator('.leaflet-container');
+    await map.click({ position: { x: 50, y: 50 } });
+    await page.waitForTimeout(500);
+
+    // Popup should be closed
+    await expect(popup).not.toBeVisible();
+
+    // Temp badge should NOT appear (this was the bug)
+    const tempBadge = page.locator('.clicked-location-marker');
+    await expect(tempBadge).not.toBeVisible();
+  });
+
   test('clicking popup title navigates to detail page', async ({ page }) => {
     // Find a webcam marker
     const webcam = page.locator('.webcam-marker').first();
