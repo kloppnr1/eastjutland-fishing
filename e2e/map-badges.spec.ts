@@ -3,7 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Map Badge Click Detection', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the map page
-    await page.goto('/map');
+    // Use baseURL from config (handles both local and deployed paths)
+    await page.goto('./map');
     // Wait for map to load
     await page.waitForSelector('.leaflet-container', { timeout: 10000 });
     // Wait for markers to appear
@@ -194,7 +195,8 @@ test.describe('Map Badge Click Detection', () => {
 
 test.describe('Expanded Badge', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/map');
+    // Use baseURL from config (handles both local and deployed paths)
+    await page.goto('./map');
     await page.waitForSelector('.leaflet-container', { timeout: 10000 });
     await page.waitForTimeout(2000);
   });
@@ -269,7 +271,8 @@ test.describe('Expanded Badge', () => {
 
 test.describe('Cluster Stacked Badges', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/map');
+    // Use baseURL from config (handles both local and deployed paths)
+    await page.goto('./map');
     await page.waitForSelector('.leaflet-container', { timeout: 10000 });
     // Zoom out to trigger clustering
     const map = page.locator('.leaflet-container');
@@ -643,7 +646,8 @@ test.describe('Cluster Stacked Badges', () => {
 
 test.describe('DateTime Picker', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/map');
+    // Use baseURL from config (handles both local and deployed paths)
+    await page.goto('./map');
     await page.waitForSelector('.leaflet-container', { timeout: 10000 });
     await page.waitForTimeout(1000);
   });
