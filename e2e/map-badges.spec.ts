@@ -89,6 +89,45 @@ test.describe('Map Badge Click Detection', () => {
     const popup = page.locator('.leaflet-popup');
     await expect(popup).toBeVisible({ timeout: 3000 });
   });
+
+  test('clicking popup title navigates to detail page', async ({ page }) => {
+    // Find a webcam marker
+    const webcam = page.locator('.webcam-marker').first();
+
+    // Skip if no webcams on current view
+    const count = await webcam.count();
+    if (count === 0) {
+      test.skip();
+      return;
+    }
+
+    // Check if webcam is within viewport
+    const box = await webcam.boundingBox();
+    const viewport = page.viewportSize();
+    if (!box || !viewport || box.x < 0 || box.y < 0 ||
+        box.x + box.width > viewport.width ||
+        box.y + box.height > viewport.height) {
+      test.skip();
+      return;
+    }
+
+    await expect(webcam).toBeVisible();
+
+    // Click webcam marker to open popup
+    await webcam.click();
+
+    // Wait for popup
+    const popup = page.locator('.leaflet-popup');
+    await expect(popup).toBeVisible({ timeout: 3000 });
+
+    // Click on the title link in the popup
+    const titleLink = popup.locator('a').first();
+    await expect(titleLink).toBeVisible();
+    await titleLink.click();
+
+    // Should navigate to detail page
+    await expect(page).toHaveURL(/\/spot\/\d+/, { timeout: 5000 });
+  });
 });
 
 test.describe('Expanded Badge', () => {
