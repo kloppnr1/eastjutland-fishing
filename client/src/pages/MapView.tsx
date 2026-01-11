@@ -42,7 +42,7 @@ const createWeatherBadge = (
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
 
   // Badge rotation: stem points away from sea (opposite direction)
-  const badgeRotation = seaDirection != null ? seaDirection : 0;
+  const badgeRotation = seaDirection != null ? seaDirection + 180 : 0;
   // Counter-rotate content to keep text upright
   const contentRotation = -badgeRotation;
   // Wind arrow needs to account for badge rotation
