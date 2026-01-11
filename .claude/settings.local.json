@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 55504 /F\")",
+      "Bash(curl:*)",
+      "Bash(cmd //c \"netstat -ano | findstr :5000\")",
+      "Bash(cmd //c \"taskkill /PID 55664 /F\")",
+      "Bash(cmd //c \"taskkill /PID 50200 /F\")",
+      "Bash(cmd //c \"taskkill /PID 56736 /F\")",
+      "Bash(cmd //c \"taskkill /PID 14144 /F\")",
+      "Bash(cmd //c \"taskkill /PID 61216 /F\")",
+      "Bash(cmd //c \"taskkill /PID 58300 /F\")",
+      "Bash(gh run list:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:static:*)",
+      "Bash(npx gh-pages:*)"
+    ]
+  }
+}

@@ -30,20 +30,34 @@ import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
 // Compass-style round badge - shows water temp + wind speed with direction pointer
+// seaDirection: 0-360 degrees indicating where the sea is (badge points away from it)
 const createWeatherBadge = (
   waterTemp: number | null,
   windSpeed: number | null,
-  windDir: number | null
+  windDir: number | null,
+  seaDirection: number | null
 ) => {
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const waterText = waterTemp != null ? waterTemp.toFixed(1) : "--";
   const windText = windSpeed != null ? windSpeed.toFixed(0) : "--";
-  const arrowRotation = windDir != null ? windDir + 180 : 0;
+
+  // Badge rotation: stem points away from sea (opposite direction)
+  const badgeRotation = seaDirection != null ? seaDirection : 0;
+  // Counter-rotate content to keep text upright
+  const contentRotation = -badgeRotation;
+  // Wind arrow needs to account for badge rotation
+  const arrowRotation = windDir != null ? windDir + 180 - badgeRotation : 0;
 
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <div style="display: flex; flex-direction: column; align-items: center;">
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: rotate(${badgeRotation}deg);
+        transform-origin: center bottom;
+      ">
         <!-- Compass badge with wind arrow -->
         <div style="position: relative; width: 46px; height: 46px;">
           <!-- Wind direction pointer (behind circle) -->
@@ -71,7 +85,7 @@ const createWeatherBadge = (
             "></div>
           </div>
           ` : ''}
-          <!-- Compass circle (on top) -->
+          <!-- Compass circle (on top) - counter-rotated to keep text upright -->
           <div style="
             position: relative;
             z-index: 2;
@@ -86,6 +100,7 @@ const createWeatherBadge = (
             align-items: center;
             justify-content: center;
             line-height: 1.15;
+            transform: rotate(${contentRotation}deg);
           ">
             <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
             <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
@@ -103,9 +118,9 @@ const createWeatherBadge = (
         "></div>
       </div>
     `,
-    iconSize: [66, 78],
-    iconAnchor: [33, 78],
-    popupAnchor: [0, -78],
+    iconSize: [100, 100],
+    iconAnchor: [50, 90],
+    popupAnchor: [0, -80],
   });
 };
 
@@ -113,9 +128,10 @@ const createWeatherBadge = (
 const createSpotIcon = (
   waterTemp: number | null,
   windSpeed: number | null,
-  windDir: number | null
+  windDir: number | null,
+  seaDirection: number | null
 ) => {
-  return createWeatherBadge(waterTemp, windSpeed, windDir);
+  return createWeatherBadge(waterTemp, windSpeed, windDir, seaDirection);
 };
 
 // Webcam marker icon - just camera icon
@@ -755,7 +771,7 @@ export default function MapView() {
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={isWebcam
                     ? createWebcamIcon()
-                    : createSpotIcon(spot.currentWaterTemp, spot.windSpeed, spot.windDirection)
+                    : createSpotIcon(spot.currentWaterTemp, spot.windSpeed, spot.windDirection, spot.seaDirection)
                   }
                   eventHandlers={{
                     click: () => setTempBadgeCoords(null),
