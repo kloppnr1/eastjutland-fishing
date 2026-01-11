@@ -79,10 +79,10 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const fontSize = Math.round(14 * scale);
   const waveIconSize = Math.round(16 * scale);
   const windIconSize = Math.round(18 * scale);
-  const iconGap = Math.round(5 * scale);
-  const rowGap = Math.round(3 * scale);
-  const paddingV = Math.round(6 * scale);
-  const paddingH = Math.round(10 * scale);
+  const iconGap = Math.round(4 * scale);
+  const rowGap = Math.round(1 * scale);
+  const paddingV = Math.round(5 * scale);
+  const paddingH = Math.round(8 * scale);
   const dotSize = Math.round(10 * scale);
   const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
