@@ -124,8 +124,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
           width: 10px;
           height: 10px;
           border-radius: 50%;
-          background: white;
-          box-shadow: 0 0 0 2px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.3);
+          background: #3b82f6;
+          box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
           z-index: 10;
         "></div>
         <!-- Rotating badge and stem -->
