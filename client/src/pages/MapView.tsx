@@ -68,66 +68,133 @@ const createClusterIcon = (cluster: any) => {
 };
 
 // Calculate stem properties for spots to avoid overlap
-// Returns a map of spotId -> { stemLength, overrideDirection }
-// overrideDirection is null if seaDirection should be used, or a number if direction should be overridden
+// Uses greedy placement algorithm that considers actual badge positions
 interface StemProps {
   stemLength: number;
   overrideDirection: number | null;
 }
 
+interface PlacedBadge {
+  anchorLat: number;
+  anchorLng: number;
+  badgeLat: number;
+  badgeLng: number;
+}
+
 function calculateStemProps(
   spots: Array<{ id: number; latitude: string; longitude: string; spotType?: string; seaDirection?: number | null }>,
-  baseLength: number = 12
+  baseLength: number = 20
 ): Map<number, StemProps> {
   const stemProps = new Map<number, StemProps>();
   const fishingSpots = spots.filter(s => s.spotType !== "webcam");
 
-  // Very aggressive detection radius: ~15km (0.15 degrees)
-  const NEARBY_THRESHOLD = 0.15;
+  if (fishingSpots.length === 0) return stemProps;
 
-  // Stem lengths to cycle through - dramatic variation
-  const STEM_LENGTHS = [12, 35, 58, 81];
+  // Configuration options - 12 directions × 4 lengths = 48 possible positions per badge
+  const DIRECTIONS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+  const LENGTHS = [20, 50, 80, 110];
 
-  // For each spot, find nearby spots
-  for (const spot of fishingSpots) {
+  // Scale: approximate degrees per pixel of stem (depends on zoom, this is a rough average)
+  const STEM_SCALE = 0.00008;
+  // Badge radius in degrees (badge is ~46px wide)
+  const BADGE_RADIUS = 23 * STEM_SCALE;
+
+  // Nearby threshold for considering overlap
+  const NEARBY_THRESHOLD = 0.25; // ~25km
+
+  // Track placed badge centers
+  const placed: PlacedBadge[] = [];
+
+  // Calculate neighbor count for each spot to determine processing order
+  const spotWithDensity = fishingSpots.map(spot => {
     const lat = parseFloat(spot.latitude);
     const lng = parseFloat(spot.longitude);
-
-    // Find all nearby spots (including self) with their distances
-    const nearbySpots: Array<{ spot: typeof fishingSpots[0]; distance: number }> = [];
-
+    let neighborCount = 0;
     for (const other of fishingSpots) {
-      const otherLat = parseFloat(other.latitude);
-      const otherLng = parseFloat(other.longitude);
-
-      const distance = Math.sqrt(
-        Math.pow(lat - otherLat, 2) + Math.pow(lng - otherLng, 2)
+      if (other.id === spot.id) continue;
+      const d = Math.sqrt(
+        Math.pow(lat - parseFloat(other.latitude), 2) +
+        Math.pow(lng - parseFloat(other.longitude), 2)
       );
-
-      if (distance < NEARBY_THRESHOLD) {
-        nearbySpots.push({ spot: other, distance });
-      }
+      if (d < NEARBY_THRESHOLD) neighborCount++;
     }
+    return { spot, neighborCount, lat, lng };
+  });
 
-    // If only this spot (no nearby), use default
-    if (nearbySpots.length <= 1) {
+  // Process isolated spots first (they keep their sea direction), then crowded ones
+  spotWithDensity.sort((a, b) => a.neighborCount - b.neighborCount);
+
+  for (const { spot, neighborCount, lat, lng } of spotWithDensity) {
+    // Find nearby already-placed badges
+    const nearbyBadges = placed.filter(b => {
+      const dist = Math.sqrt(
+        Math.pow(lat - b.anchorLat, 2) + Math.pow(lng - b.anchorLng, 2)
+      );
+      return dist < NEARBY_THRESHOLD;
+    });
+
+    if (nearbyBadges.length === 0) {
+      // No nearby badges - use sea direction or default
+      const defaultDir = spot.seaDirection != null ? (spot.seaDirection + 180) % 360 : 0;
       stemProps.set(spot.id, { stemLength: baseLength, overrideDirection: null });
+
+      const rad = (defaultDir * Math.PI) / 180;
+      placed.push({
+        anchorLat: lat,
+        anchorLng: lng,
+        badgeLat: lat + baseLength * STEM_SCALE * Math.cos(rad),
+        badgeLng: lng + baseLength * STEM_SCALE * Math.sin(rad),
+      });
     } else {
-      // Sort by id for consistency
-      nearbySpots.sort((a, b) => a.spot.id - b.spot.id);
-      const myIndex = nearbySpots.findIndex(s => s.spot.id === spot.id);
-      const total = nearbySpots.length;
+      // Find the configuration that maximizes minimum distance to nearby badge centers
+      let bestDir = 0;
+      let bestLen = LENGTHS[0];
+      let bestMinDist = -Infinity;
 
-      // Combine direction and length variation for maximum separation
-      // Use different stem length for each spot
-      const stemLength = STEM_LENGTHS[myIndex % STEM_LENGTHS.length];
+      for (const dir of DIRECTIONS) {
+        for (const len of LENGTHS) {
+          const rad = (dir * Math.PI) / 180;
+          const badgeLat = lat + len * STEM_SCALE * Math.cos(rad);
+          const badgeLng = lng + len * STEM_SCALE * Math.sin(rad);
 
-      // Spread directions evenly around compass
-      // Offset by 30° so badges don't point straight N/E/S/W
-      const directionOffset = 30 + (360 / total) * myIndex;
-      const overrideDirection = Math.round(directionOffset) % 360;
+          // Calculate minimum distance to any nearby badge center
+          let minDist = Infinity;
+          for (const other of nearbyBadges) {
+            const dist = Math.sqrt(
+              Math.pow(badgeLat - other.badgeLat, 2) +
+              Math.pow(badgeLng - other.badgeLng, 2)
+            );
+            // Subtract badge radii to get edge-to-edge distance
+            const edgeDist = dist - 2 * BADGE_RADIUS;
+            minDist = Math.min(minDist, edgeDist);
+          }
 
-      stemProps.set(spot.id, { stemLength, overrideDirection });
+          // Also penalize being too close to anchor points of nearby spots
+          for (const other of nearbyBadges) {
+            const distToAnchor = Math.sqrt(
+              Math.pow(badgeLat - other.anchorLat, 2) +
+              Math.pow(badgeLng - other.anchorLng, 2)
+            );
+            minDist = Math.min(minDist, distToAnchor - BADGE_RADIUS);
+          }
+
+          if (minDist > bestMinDist) {
+            bestMinDist = minDist;
+            bestDir = dir;
+            bestLen = len;
+          }
+        }
+      }
+
+      stemProps.set(spot.id, { stemLength: bestLen, overrideDirection: bestDir });
+
+      const rad = (bestDir * Math.PI) / 180;
+      placed.push({
+        anchorLat: lat,
+        anchorLng: lng,
+        badgeLat: lat + bestLen * STEM_SCALE * Math.cos(rad),
+        badgeLng: lng + bestLen * STEM_SCALE * Math.sin(rad),
+      });
     }
   }
 
