@@ -51,76 +51,100 @@ const createWeatherBadge = (
   return divIcon({
     className: "weather-badge-marker",
     html: `
-      <div style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        transform: rotate(${badgeRotation}deg);
-        transform-origin: center bottom;
-      ">
-        <!-- Compass badge with wind arrow -->
-        <div style="position: relative; width: 46px; height: 46px;">
-          <!-- Wind direction pointer (behind circle) -->
-          ${windDir != null ? `
-          <div style="
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 46px;
-            height: 46px;
-            transform: rotate(${arrowRotation}deg);
-            z-index: 1;
-          ">
-            <div style="
-              position: absolute;
-              top: -10px;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 0;
-              height: 0;
-              border-left: 10px solid transparent;
-              border-right: 10px solid transparent;
-              border-bottom: 18px solid #ec4899;
-              filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
-            "></div>
-          </div>
-          ` : ''}
-          <!-- Compass circle (on top) - counter-rotated to keep text upright -->
-          <div style="
-            position: relative;
-            z-index: 2;
-            width: 46px;
-            height: 46px;
-            background: white;
-            border-radius: 50%;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            border: 2.5px solid ${waterColor};
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.15;
-            transform: rotate(${contentRotation}deg);
-          ">
-            <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
-            <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
-          </div>
-        </div>
-        <!-- Stem pointing to exact location -->
-        <div style="width: 2px; height: 12px; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"></div>
-        <!-- Anchor point dot -->
+      <div style="position: relative; width: 100px; height: 100px;">
+        <!-- Fixed anchor dot at center-bottom -->
         <div style="
+          position: absolute;
+          bottom: 5px;
+          left: 50%;
+          transform: translateX(-50%);
           width: 10px;
           height: 10px;
           border-radius: 50%;
           background: #7c3aed;
           box-shadow: 0 0 0 2px white, 0 2px 4px rgba(0,0,0,0.3);
+          z-index: 10;
         "></div>
+        <!-- Rotating badge and stem -->
+        <div style="
+          position: absolute;
+          bottom: 10px;
+          left: 50%;
+          transform-origin: bottom center;
+          transform: translateX(-50%) rotate(${badgeRotation}deg);
+        ">
+          <!-- Stem -->
+          <div style="
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 12px;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+          "></div>
+          <!-- Badge container -->
+          <div style="
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 46px;
+            height: 46px;
+          ">
+            <!-- Wind direction pointer (behind circle) -->
+            ${windDir != null ? `
+            <div style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 46px;
+              height: 46px;
+              transform: rotate(${arrowRotation}deg);
+              z-index: 1;
+            ">
+              <div style="
+                position: absolute;
+                top: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 0;
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 18px solid #ec4899;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+              "></div>
+            </div>
+            ` : ''}
+            <!-- Compass circle (counter-rotated to keep text upright) -->
+            <div style="
+              position: relative;
+              z-index: 2;
+              width: 46px;
+              height: 46px;
+              background: white;
+              border-radius: 50%;
+              box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+              border: 2.5px solid ${waterColor};
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              line-height: 1.15;
+              transform: rotate(${contentRotation}deg);
+            ">
+              <span style="font-size: 14px; font-weight: 800; color: ${waterColor};">${waterText}°</span>
+              <span style="font-size: 11px; font-weight: 700; color: #475569;">${windText}</span>
+            </div>
+          </div>
+        </div>
       </div>
     `,
     iconSize: [100, 100],
-    iconAnchor: [50, 90],
-    popupAnchor: [0, -80],
+    iconAnchor: [50, 95],
+    popupAnchor: [0, -85],
   });
 };
 
