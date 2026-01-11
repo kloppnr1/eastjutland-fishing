@@ -31,7 +31,7 @@ import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
 // Create cluster icon showing count and stats - stacked badge style
-const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) => {
+const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) => (cluster: any) => {
   const markers = cluster.getAllChildMarkers();
   const count = markers.length;
 
@@ -59,47 +59,63 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
   const windMax = windSpeeds.length > 0 ? Math.max(...windSpeeds) : null;
 
   // Format display values - show "--" for missing data
-  const waterText = waterMin != null && waterMax != null
+  const hasWaterData = waterMin != null && waterMax != null;
+  const hasWindData = windMin != null && windMax != null;
+  const waterText = hasWaterData
     ? (waterMin === waterMax ? `${waterMin.toFixed(1)}°` : `${waterMin.toFixed(1)}-${waterMax.toFixed(1)}°`)
     : "--";
-  const windText = windMin != null && windMax != null
+  const windText = hasWindData
     ? (windMin === windMax ? `${windMin.toFixed(0)}` : `${windMin.toFixed(0)}-${windMax.toFixed(0)}`)
     : "--";
   const avgWindDir = windDirs.length > 0 ? Math.round(windDirs.reduce((a, b) => a + b, 0) / windDirs.length) : 0;
 
-  const waterColor = waterMin != null ? (waterMin < 5 ? "#3b82f6" : waterMin < 12 ? "#14b8a6" : "#f97316") : "#6b7280";
+  const waterColor = hasWaterData ? (waterMin < 5 ? "#3b82f6" : waterMin < 12 ? "#14b8a6" : "#f97316") : "#6b7280";
 
   // Number of stacked cards to show (max 3)
   const stackCount = Math.min(3, count);
 
-  // Fixed badge dimensions for consistent stacking
-  const badgeWidth = 58;
-  const badgeHeight = 52;
+  // Badge dimensions scaled by zoom level
+  const badgeWidth = Math.round(58 * scale);
+  const badgeHeight = Math.round(52 * scale);
+  const fontSize = Math.round(14 * scale);
+  const smallFontSize = Math.round(10 * scale);
+  const iconSize = Math.round(11 * scale);
+  const dotSize = Math.round(12 * scale);
+  const stemHeight = Math.round(14 * scale);
+  const containerSize = Math.round(100 * scale);
+
+  // Scaled positioning values
+  const backBottom = Math.round(34 * scale);
+  const middleBottom = Math.round(30 * scale);
+  const frontBottom = Math.round(26 * scale);
+  const backOffset = Math.round(8 * scale);
+  const middleOffset = Math.round(6 * scale);
+  const padding = Math.round(4 * scale);
 
   return divIcon({
     html: `
-      <div style="position: relative; width: 100px; height: 100px; pointer-events: none;">
+      <div style="position: relative; width: ${containerSize}px; height: ${containerSize}px; pointer-events: none;">
         <!-- Anchor dot -->
         <div style="
           position: absolute;
           bottom: 0;
           left: 50%;
           transform: translateX(-50%);
-          width: 12px;
-          height: 12px;
+          width: ${dotSize}px;
+          height: ${dotSize}px;
           border-radius: 50%;
           background: #3b82f6;
-          box-shadow: 0 0 0 3px white, 0 2px 6px rgba(0,0,0,0.4);
+          box-shadow: 0 0 0 ${Math.round(3 * scale)}px white, 0 2px 6px rgba(0,0,0,0.4);
           z-index: 10;
         "></div>
         <!-- Stem -->
         <div style="
           position: absolute;
-          bottom: 12px;
+          bottom: ${dotSize}px;
           left: 50%;
           transform: translateX(-50%);
-          width: 2px;
-          height: 14px;
+          width: ${Math.round(2 * scale)}px;
+          height: ${stemHeight}px;
           background: white;
           box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         "></div>
@@ -107,11 +123,11 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
         ${stackCount >= 3 ? `
         <div style="
           position: absolute;
-          bottom: 34px;
+          bottom: ${backBottom}px;
           left: 50%;
-          transform: translateX(calc(-50% - 8px)) rotate(-12deg);
+          transform: translateX(calc(-50% - ${backOffset}px)) rotate(-12deg);
           background: #9ca3af;
-          border-radius: 6px;
+          border-radius: ${Math.round(6 * scale)}px;
           width: ${badgeWidth}px;
           height: ${badgeHeight}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -121,11 +137,11 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
         ${stackCount >= 2 ? `
         <div style="
           position: absolute;
-          bottom: 30px;
+          bottom: ${middleBottom}px;
           left: 50%;
-          transform: translateX(calc(-50% + 6px)) rotate(10deg);
+          transform: translateX(calc(-50% + ${middleOffset}px)) rotate(10deg);
           background: #d1d5db;
-          border-radius: 6px;
+          border-radius: ${Math.round(6 * scale)}px;
           width: ${badgeWidth}px;
           height: ${badgeHeight}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
@@ -134,44 +150,45 @@ const createClusterIconFactory = (spots: any[] | undefined) => (cluster: any) =>
         <!-- Front badge with content -->
         <div style="
           position: absolute;
-          bottom: 26px;
+          bottom: ${frontBottom}px;
           left: 50%;
           transform: translateX(-50%);
           background: white;
-          border-radius: 6px;
+          border-radius: ${Math.round(6 * scale)}px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
           width: ${badgeWidth}px;
           height: ${badgeHeight}px;
-          padding: 4px 6px;
+          padding: ${padding}px ${Math.round(5 * scale)}px;
           box-sizing: border-box;
           pointer-events: auto;
           cursor: pointer;
           display: flex;
           flex-direction: column;
+          align-items: stretch;
           justify-content: center;
-          gap: 2px;
+          gap: ${Math.round(1 * scale)}px;
         ">
-          <div style="font-size: 13px; font-weight: 800; color: #3b82f6; text-align: center;">${count}</div>
-          <div style="display: flex; align-items: center; gap: 3px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
+          <div style="font-size: ${fontSize}px; font-weight: 800; color: #3b82f6; text-align: center; line-height: 1.1;">${count}</div>
+          <div style="display: flex; align-items: center; gap: ${Math.round(2 * scale)}px;">
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="${waterColor}" stroke-width="2.5" style="flex-shrink: 0;">
               <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
               <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
             </svg>
-            <span style="font-size: 10px; font-weight: 700; color: ${waterColor};">${waterText}</span>
+            <span style="font-size: ${smallFontSize}px; font-weight: 700; color: ${waterColor}; line-height: 1;">${waterText}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 3px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" style="flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: ${Math.round(2 * scale)}px;">
+            <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" style="flex-shrink: 0;">
               <circle cx="12" cy="12" r="10" fill="none" stroke="#64748b" stroke-width="1.5"/>
-              <path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>
+              ${hasWindData ? `<path d="M12 6L12 18M12 6L8 10M12 6L16 10" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform-origin: center; transform: rotate(${avgWindDir + 180}deg);"/>` : ''}
             </svg>
-            <span style="font-size: 10px; font-weight: 700; color: #64748b;">${windText}</span>
+            <span style="font-size: ${smallFontSize}px; font-weight: 700; color: #64748b; line-height: 1;">${windText}</span>
           </div>
         </div>
       </div>
     `,
     className: "cluster-icon",
-    iconSize: [100, 100],
-    iconAnchor: [50, 100],
+    iconSize: [containerSize, containerSize],
+    iconAnchor: [containerSize / 2, containerSize],
   });
 };
 
@@ -1215,8 +1232,9 @@ export default function MapView() {
 
             {/* Fishing spots (clustered) */}
             <MarkerClusterGroup
+              key={`cluster-${currentZoom}`}
               chunkedLoading
-              iconCreateFunction={createClusterIconFactory(spots)}
+              iconCreateFunction={createClusterIconFactory(spots, badgeScale)}
               maxClusterRadius={60}
               spiderfyOnMaxZoom={true}
               showCoverageOnHover={false}
