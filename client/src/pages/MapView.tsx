@@ -93,10 +93,12 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
 
-  // Scaled positioning values - larger offsets for more visible stacking
+  // Scaled positioning values
   const badgeBottom = Math.round(27 * scale);
-  const backOffset = Math.round(18 * scale);
-  const middleOffset = Math.round(14 * scale);
+  const backOffset = Math.round(12 * scale);
+  const middleOffset = Math.round(10 * scale);
+  // Fixed width for all badges to ensure consistent stacking
+  const badgeWidth = Math.round(70 * scale);
 
   return divIcon({
     html: `
@@ -134,13 +136,10 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           transform: translateX(calc(-50% - ${backOffset}px)) rotate(-15deg);
           background: #9ca3af;
           border-radius: ${Math.round(6 * scale)}px;
-          padding: ${paddingV}px ${paddingH}px;
+          width: ${badgeWidth}px;
+          height: ${Math.round(70 * scale)}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        ">
-          <div style="visibility: hidden; padding: ${Math.round(2 * scale)}px 0; margin-bottom: ${rowGap}px; font-size: ${fontSize}px; width: ${Math.round(28 * scale)}px;">0</div>
-          <div style="visibility: hidden; height: ${waveIconSize}px; margin-bottom: ${rowGap}px;"></div>
-          <div style="visibility: hidden; height: ${windIconSize}px;"></div>
-        </div>
+        "></div>
         ` : ''}
         <!-- Stacked badges (middle) -->
         ${stackCount >= 2 ? `
@@ -151,15 +150,12 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           transform: translateX(calc(-50% + ${middleOffset}px)) rotate(12deg);
           background: #d1d5db;
           border-radius: ${Math.round(6 * scale)}px;
-          padding: ${paddingV}px ${paddingH}px;
+          width: ${badgeWidth}px;
+          height: ${Math.round(70 * scale)}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        ">
-          <div style="visibility: hidden; padding: ${Math.round(2 * scale)}px 0; margin-bottom: ${rowGap}px; font-size: ${fontSize}px; width: ${Math.round(28 * scale)}px;">0</div>
-          <div style="visibility: hidden; height: ${waveIconSize}px; margin-bottom: ${rowGap}px;"></div>
-          <div style="visibility: hidden; height: ${windIconSize}px;"></div>
-        </div>
+        "></div>
         ` : ''}
-        <!-- Front badge with content (matching fish spot layout) -->
+        <!-- Front badge with content (fixed width) -->
         <div style="
           position: absolute;
           bottom: ${badgeBottom}px;
@@ -169,7 +165,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           border-radius: ${Math.round(6 * scale)}px;
           box-shadow: 0 2px 6px rgba(0,0,0,0.25);
           padding: ${paddingV}px ${paddingH}px;
-          white-space: nowrap;
+          width: ${badgeWidth}px;
+          box-sizing: border-box;
           pointer-events: auto;
           cursor: pointer;
         ">
