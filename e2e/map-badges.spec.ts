@@ -458,6 +458,50 @@ test.describe('Cluster Stacked Badges', () => {
     }
   });
 
+  test('cluster badge content does not wrap to multiple lines', async ({ page }) => {
+    const clusters = page.locator('.cluster-icon');
+    const count = await clusters.count();
+
+    if (count === 0) {
+      test.skip();
+      return;
+    }
+
+    const cluster = clusters.first();
+    await expect(cluster).toBeVisible();
+
+    // Get all rows in the badge (water temp row, wind row)
+    // Each row should have a single line height (not wrapped)
+    const rows = cluster.locator('div[style*="display: flex"][style*="align-items: center"]');
+    const rowCount = await rows.count();
+
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const rowBox = await row.boundingBox();
+
+      if (rowBox) {
+        // A single line row should be less than ~25px tall (font-size 14px + some padding)
+        // If content wraps, height would be ~40px+
+        expect(rowBox.height).toBeLessThan(30);
+      }
+    }
+
+    // Also verify the text spans themselves are single line
+    // by checking that text with ranges like "1.5-1.6°" fits
+    const textSpans = cluster.locator('span[style*="font-weight: 700"]');
+    const spanCount = await textSpans.count();
+
+    for (let i = 0; i < spanCount; i++) {
+      const span = textSpans.nth(i);
+      const spanBox = await span.boundingBox();
+
+      if (spanBox) {
+        // Single line text should be less than 20px tall
+        expect(spanBox.height).toBeLessThan(25);
+      }
+    }
+  });
+
   test('cluster badge width accommodates content without overflow', async ({ page }) => {
     const clusters = page.locator('.cluster-icon');
     const count = await clusters.count();
