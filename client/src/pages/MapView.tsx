@@ -1148,30 +1148,32 @@ function DateTimePicker({
     return String(selectedDateTime.getHours()).padStart(2, '0');
   }, [selectedDateTime]);
 
-  // Check if selected time is default (today at 12:00)
-  const isDefault = useMemo(() => {
+  // Check if selected time is current hour (for showing reset button)
+  const isCurrentHour = useMemo(() => {
     const now = new Date();
     return selectedDateTime.getFullYear() === now.getFullYear() &&
            selectedDateTime.getMonth() === now.getMonth() &&
            selectedDateTime.getDate() === now.getDate() &&
-           selectedDateTime.getHours() === 12;
+           selectedDateTime.getHours() === now.getHours();
   }, [selectedDateTime]);
 
   // Format display text
   const displayText = useMemo(() => {
-    if (isDefault) return "I dag kl. 12";
+    if (isCurrentHour) return "Nu";
     const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
     const dayName = dayNames[selectedDateTime.getDay()];
     const day = selectedDateTime.getDate();
     const month = selectedDateTime.getMonth() + 1;
     const hour = String(selectedDateTime.getHours()).padStart(2, '0');
     return `${dayName} ${day}/${month} kl. ${hour}`;
-  }, [selectedDateTime, isDefault]);
+  }, [selectedDateTime, isCurrentHour]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [year, month, day] = e.target.value.split('-').map(Number);
     const newDate = new Date(selectedDateTime);
     newDate.setFullYear(year, month - 1, day);
+    // Default to 12:00 when selecting a new date
+    newDate.setHours(12, 0, 0, 0);
     onChange(newDate);
   };
 
@@ -1195,7 +1197,7 @@ function DateTimePicker({
         >
           <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
           <span className="font-medium text-xs sm:text-sm truncate" data-testid="datetime-display">{displayText}</span>
-          {!isDefault && (
+          {!isCurrentHour && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1265,15 +1267,8 @@ function DateTimePicker({
   );
 }
 
-// Get default datetime (today at 12:00)
-function getDefaultDateTime(): Date {
-  const now = new Date();
-  now.setHours(12, 0, 0, 0);
-  return now;
-}
-
 export default function MapView() {
-  const [selectedDateTime, setSelectedDateTime] = useState<Date>(getDefaultDateTime);
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(() => new Date());
   const { data: spots, isLoading, error } = useSpots(selectedDateTime);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -1281,9 +1276,9 @@ export default function MapView() {
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const searchString = useSearch();
 
-  // Reset datetime to today at 12:00
+  // Reset datetime to current time
   const handleResetDateTime = useCallback(() => {
-    setSelectedDateTime(getDefaultDateTime());
+    setSelectedDateTime(new Date());
   }, []);
 
   // Calculate badge scale based on zoom (slightly smaller when zoomed out)

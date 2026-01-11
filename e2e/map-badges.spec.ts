@@ -641,9 +641,9 @@ test.describe('DateTime Picker', () => {
     await expect(picker).toBeVisible();
   });
 
-  test('datetime picker shows "I dag kl. 12" by default', async ({ page }) => {
+  test('datetime picker shows "Nu" by default', async ({ page }) => {
     const display = page.getByTestId('datetime-display');
-    await expect(display).toHaveText('I dag kl. 12');
+    await expect(display).toHaveText('Nu');
   });
 
   test('clicking datetime picker toggle expands the picker', async ({ page }) => {
@@ -692,32 +692,32 @@ test.describe('DateTime Picker', () => {
     }
   });
 
-  test('reset button returns to default (12:00)', async ({ page }) => {
+  test('reset button returns to current time', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
-    // Select a different hour to change from default
-    const hourButton = page.getByTestId('datetime-hour-18');
+    // Select a different hour to change from current
+    const hourButton = page.getByTestId('datetime-hour-3');
     await hourButton.click();
 
-    // Display should not show default anymore
+    // Display should not show "Nu" anymore
     const display = page.getByTestId('datetime-display');
-    await expect(display).not.toHaveText('I dag kl. 12');
+    await expect(display).not.toHaveText('Nu');
 
     // Click reset button
     const resetButton = page.getByTestId('datetime-reset-full');
     await resetButton.click();
 
-    // Should be back to default
-    await expect(display).toHaveText('I dag kl. 12');
+    // Should be back to "Nu"
+    await expect(display).toHaveText('Nu');
   });
 
-  test('reset icon appears when not showing default time', async ({ page }) => {
+  test('reset icon appears when not showing current time', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
-    // Select a different hour (not 12)
-    const hourButton = page.getByTestId('datetime-hour-18');
+    // Select a different hour
+    const hourButton = page.getByTestId('datetime-hour-3');
     await hourButton.click();
 
     // Close the expanded view
@@ -726,6 +726,22 @@ test.describe('DateTime Picker', () => {
     // Reset icon should be visible in the collapsed view
     const resetIcon = page.getByTestId('datetime-reset');
     await expect(resetIcon).toBeVisible();
+  });
+
+  test('selecting new date defaults to 12:00', async ({ page }) => {
+    const toggle = page.getByTestId('datetime-toggle');
+    await toggle.click();
+
+    // Select tomorrow's date
+    const dateInput = page.getByTestId('datetime-date-input');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    await dateInput.fill(tomorrowStr);
+
+    // Display should show 12:00 for the new date
+    const display = page.getByTestId('datetime-display');
+    await expect(display).toContainText('kl. 12');
   });
 
   test('changing datetime triggers data reload', async ({ page }) => {
