@@ -1199,10 +1199,10 @@ export default function MapView() {
                   click: () => setTempBadgeCoords(null),
                 }}
               >
-                <Popup maxWidth={320} minWidth={280} closeButton={false}>
-                  <div>
+                <Popup maxWidth={320} minWidth={280} closeButton={false} className="webcam-popup">
+                  <div className="bg-purple-600 text-white p-3 -m-[13px] -mb-[14px] rounded-xl">
                     <Link href={`/spot/${spot.id}`}>
-                      <h3 className="font-bold text-sm mb-2 text-center text-purple-700 hover:text-purple-500 transition-colors cursor-pointer flex items-center justify-center gap-2">
+                      <h3 className="font-bold text-sm mb-2 text-center text-white hover:text-purple-200 transition-colors cursor-pointer flex items-center justify-center gap-2">
                         <Video className="w-4 h-4" />
                         {spot.name}
                       </h3>
@@ -1228,7 +1228,7 @@ export default function MapView() {
                       </div>
                     )}
                     {spot.description && (
-                      <p className="text-xs text-gray-500 mt-2 text-center">{spot.description}</p>
+                      <p className="text-xs text-purple-200 mt-2 text-center">{spot.description}</p>
                     )}
                   </div>
                 </Popup>
