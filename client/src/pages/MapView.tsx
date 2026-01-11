@@ -267,6 +267,7 @@ const createWeatherBadge = (
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${badgeRotation}deg);
+          pointer-events: none;
         ">
           <!-- Stem -->
           <div style="
@@ -278,6 +279,7 @@ const createWeatherBadge = (
             height: ${stemLength}px;
             background: white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            pointer-events: none;
           "></div>
           <!-- Badge container -->
           <div style="
@@ -367,6 +369,7 @@ const createWebcamIcon = (
           left: 50%;
           transform-origin: bottom center;
           transform: translateX(-50%) rotate(${rotation}deg);
+          pointer-events: none;
         ">
           <!-- Stem -->
           <div style="
@@ -377,6 +380,7 @@ const createWebcamIcon = (
             width: 2px;
             height: ${stemLength}px;
             background: #7c3aed;
+            pointer-events: none;
           "></div>
           <!-- Icon container -->
           <div style="
