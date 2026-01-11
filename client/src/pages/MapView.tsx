@@ -1213,12 +1213,18 @@ export default function MapView() {
               >
                 <Popup maxWidth={320} minWidth={280} closeButton={false} className="webcam-popup">
                   <div className="bg-purple-600 text-white p-3 -m-[13px] -mb-[14px] rounded-xl">
-                    <Link href={`/spot/${spot.id}`}>
+                    <a
+                      href={`/spot/${spot.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `/spot/${spot.id}`;
+                      }}
+                    >
                       <h3 className="font-bold text-sm mb-2 text-center text-white hover:text-purple-200 transition-colors cursor-pointer flex items-center justify-center gap-2">
                         <Video className="w-4 h-4" />
                         {spot.name}
                       </h3>
-                    </Link>
+                    </a>
                     {spot.webcamUrl && (
                       <div className="rounded-lg overflow-hidden aspect-video">
                         {/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(spot.webcamUrl) ? (
