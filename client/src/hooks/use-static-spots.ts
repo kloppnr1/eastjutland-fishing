@@ -103,11 +103,35 @@ function getFullCacheKey(lat: number, lng: number, dateTime: Date): string {
   return `${tileKey}_${dateTimeKey}`;
 }
 
+// Check if any tile for a datetime is expired - if so, all tiles for that datetime are invalid
+function isDateTimeExpired(dateTime: Date, cache: WeatherTileCache): boolean {
+  const dateTimeKey = formatDateTimeKey(dateTime);
+  const now = Date.now();
+
+  // Find all cache entries for this datetime
+  for (const key of Object.keys(cache)) {
+    if (key.endsWith(`_${dateTimeKey}`)) {
+      const cached = cache[key];
+      if (cached && (now - cached.fetchedAt) >= CACHE_DURATION) {
+        // Found an expired tile for this datetime - invalidate all
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Get cached weather for a location and time (checks tile cache)
+// If any tile for the same datetime is expired, treat entire datetime as invalid
 function getCachedWeather(lat: number, lng: number, dateTime: Date, cache: WeatherTileCache): WeatherData | null {
+  // First check if any tile for this datetime is expired
+  if (isDateTimeExpired(dateTime, cache)) {
+    return null;
+  }
+
   const fullKey = getFullCacheKey(lat, lng, dateTime);
   const cached = cache[fullKey];
-  if (cached && (Date.now() - cached.fetchedAt) < CACHE_DURATION) {
+  if (cached) {
     return cached;
   }
   return null;
@@ -270,6 +294,9 @@ export function useStaticSpots(selectedDateTime?: Date) {
     const newCache: WeatherTileCache = { ...existingCache };
     const tilesToFetch = new Set<string>();
 
+    // Check if any tile for this datetime is expired - if so, refetch all
+    const dateTimeExpired = isDateTimeExpired(targetDateTime, existingCache);
+
     // Find unique tiles that need fetching (skip webcams)
     for (const spot of allSpots) {
       if (spot.spotType === "webcam") continue;
@@ -278,14 +305,16 @@ export function useStaticSpots(selectedDateTime?: Date) {
       const lng = Number(spot.longitude);
       const fullKey = getFullCacheKey(lat, lng, targetDateTime);
 
-      // Skip if tile is already cached and fresh
-      const cached = existingCache[fullKey];
-      if (cached && (Date.now() - cached.fetchedAt) < CACHE_DURATION) {
-        continue;
+      // If datetime is expired, fetch all tiles; otherwise only fetch missing ones
+      if (dateTimeExpired) {
+        tilesToFetch.add(`${lat}_${lng}`);
+      } else {
+        // Only fetch if not in cache at all
+        const cached = existingCache[fullKey];
+        if (!cached) {
+          tilesToFetch.add(`${lat}_${lng}`);
+        }
       }
-
-      // Store tile coords for fetching (use base tile key to group)
-      tilesToFetch.add(`${lat}_${lng}`);
     }
 
     if (tilesToFetch.size === 0) return;
