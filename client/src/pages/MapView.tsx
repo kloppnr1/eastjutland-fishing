@@ -132,8 +132,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           padding: ${paddingV}px ${paddingH}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         ">
-          <div style="visibility: hidden; font-size: ${fontSize}px;">0</div>
-          <div style="visibility: hidden; height: ${waveIconSize}px;"></div>
+          <div style="visibility: hidden; padding: ${Math.round(2 * scale)}px ${Math.round(6 * scale)}px; margin-bottom: ${rowGap}px; font-size: ${fontSize}px;">0</div>
+          <div style="visibility: hidden; height: ${waveIconSize}px; margin-bottom: ${rowGap}px;"></div>
           <div style="visibility: hidden; height: ${windIconSize}px;"></div>
         </div>
         ` : ''}
@@ -149,8 +149,8 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           padding: ${paddingV}px ${paddingH}px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         ">
-          <div style="visibility: hidden; font-size: ${fontSize}px;">0</div>
-          <div style="visibility: hidden; height: ${waveIconSize}px;"></div>
+          <div style="visibility: hidden; padding: ${Math.round(2 * scale)}px ${Math.round(6 * scale)}px; margin-bottom: ${rowGap}px; font-size: ${fontSize}px;">0</div>
+          <div style="visibility: hidden; height: ${waveIconSize}px; margin-bottom: ${rowGap}px;"></div>
           <div style="visibility: hidden; height: ${windIconSize}px;"></div>
         </div>
         ` : ''}
