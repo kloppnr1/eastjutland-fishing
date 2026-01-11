@@ -2,6 +2,7 @@ node_modules
 dist
 dist-static
 test-build
+client/client
 .DS_Store
 server/public
 vite.config.ts.*
