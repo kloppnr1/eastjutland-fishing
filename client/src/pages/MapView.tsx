@@ -79,10 +79,11 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
   const fontSize = Math.round(14 * scale);
   const waveIconSize = Math.round(16 * scale);
   const windIconSize = Math.round(18 * scale);
-  const iconGap = Math.round(4 * scale);
-  const rowGap = Math.round(1 * scale);
-  const paddingV = Math.round(5 * scale);
-  const paddingH = Math.round(8 * scale);
+  const iconGap = Math.round(5 * scale);
+  const rowGap = Math.round(3 * scale);
+  const paddingV = Math.round(6 * scale);
+  const paddingH = Math.round(10 * scale);
+  const countGap = Math.round(2 * scale);
   const dotSize = Math.round(10 * scale);
   const stemHeight = Math.round(12 * scale);
   const containerSize = Math.round(100 * scale);
@@ -168,7 +169,7 @@ const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) =
           cursor: pointer;
         ">
           <!-- Count with map pin icon -->
-          <div style="display: flex; align-items: center; gap: ${iconGap}px; margin-bottom: ${rowGap}px;">
+          <div style="display: flex; align-items: center; gap: ${countGap}px; margin-bottom: ${rowGap}px;">
             <svg width="${waveIconSize}" height="${waveIconSize}" viewBox="0 0 24 24" fill="#3b82f6" stroke="#3b82f6" stroke-width="1">
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
               <circle cx="12" cy="10" r="3" fill="white" stroke="white"/>
