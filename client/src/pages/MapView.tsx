@@ -1126,6 +1126,7 @@ function SpotSparkline({ lat, lng }: { lat: string; lng: string }) {
 }
 
 // DateTime picker component for selecting weather data time
+// Uses full-screen modal on mobile for better touch experience
 function DateTimePicker({
   selectedDateTime,
   onChange,
@@ -1135,7 +1136,7 @@ function DateTimePicker({
   onChange: (date: Date) => void;
   onReset: () => void;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   // Pending datetime while user is selecting (not yet confirmed)
   const [pendingDateTime, setPendingDateTime] = useState<Date | null>(null);
 
@@ -1175,12 +1176,21 @@ function DateTimePicker({
     return `${dayName} ${day}/${month} kl. ${hour}`;
   }, [selectedDateTime, isCurrentHour]);
 
-  // Initialize pending state when expanding
-  const handleToggle = () => {
-    if (!isExpanded) {
-      setPendingDateTime(new Date(selectedDateTime));
-    }
-    setIsExpanded(!isExpanded);
+  // Format pending selection text for modal header
+  const pendingDisplayText = useMemo(() => {
+    if (!pendingDateTime) return "";
+    const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+    const dayName = dayNames[pendingDateTime.getDay()];
+    const day = pendingDateTime.getDate();
+    const month = pendingDateTime.getMonth() + 1;
+    const hour = String(pendingDateTime.getHours()).padStart(2, '0');
+    return `${dayName} ${day}/${month} kl. ${hour}:00`;
+  }, [pendingDateTime]);
+
+  // Open modal
+  const handleOpen = () => {
+    setPendingDateTime(new Date(selectedDateTime));
+    setIsOpen(true);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1203,35 +1213,41 @@ function DateTimePicker({
       onChange(pendingDateTime);
     }
     setPendingDateTime(null);
-    setIsExpanded(false);
+    setIsOpen(false);
   };
 
   const handleCancel = () => {
     setPendingDateTime(null);
-    setIsExpanded(false);
+    setIsOpen(false);
+  };
+
+  const handleReset = () => {
+    onReset();
+    setPendingDateTime(null);
+    setIsOpen(false);
   };
 
   // Generate hour options
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   return (
-    <div className="absolute top-2 left-2 sm:top-6 sm:left-6 z-[1000] max-w-[calc(100vw-1rem)] sm:max-w-none" data-testid="datetime-picker">
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Collapsed view - just shows current selection */}
+    <>
+      {/* Trigger button */}
+      <div className="absolute top-2 left-2 sm:top-6 sm:left-6 z-[1000]" data-testid="datetime-picker">
         <button
-          onClick={handleToggle}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2 hover:bg-gray-50 transition-colors w-full"
+          onClick={handleOpen}
+          className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
           data-testid="datetime-toggle"
         >
-          <Calendar className="w-4 h-4 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
-          <span className="font-medium text-sm truncate" data-testid="datetime-display">{displayText}</span>
+          <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+          <span className="font-medium text-sm" data-testid="datetime-display">{displayText}</span>
           {!isCurrentHour && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onReset();
               }}
-              className="ml-1 sm:ml-2 p-1 hover:bg-gray-200 rounded-full flex-shrink-0"
+              className="ml-1 p-1 hover:bg-gray-200 rounded-full flex-shrink-0"
               title="Nulstil"
               data-testid="datetime-reset"
             >
@@ -1239,78 +1255,100 @@ function DateTimePicker({
             </button>
           )}
         </button>
+      </div>
 
-        {/* Expanded view - date and time picker */}
-        {isExpanded && (
-          <div className="border-t border-gray-100 p-3 sm:p-3" data-testid="datetime-expanded">
-            {/* Date picker */}
-            <div className="mb-3">
-              <label className="text-xs text-gray-500 block mb-1">Dato</label>
-              <input
-                type="date"
-                value={dateValue}
-                onChange={handleDateChange}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                data-testid="datetime-date-input"
-              />
-            </div>
-
-            {/* Hour picker - scrollable grid */}
-            <div className="mb-3">
-              <label className="text-xs text-gray-500 block mb-1">Klokkeslæt</label>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-40 sm:max-h-32 overflow-y-auto" data-testid="datetime-hour-grid">
-                {hours.map(hour => (
-                  <button
-                    key={hour}
-                    onClick={() => handleHourChange(hour)}
-                    className={`py-2.5 px-2 text-sm font-medium rounded-lg ${
-                      parseInt(timeValue) === hour
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                    data-testid={`datetime-hour-${hour}`}
-                  >
-                    {String(hour).padStart(2, '0')}
-                  </button>
-                ))}
+      {/* Full-screen modal */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[2000] bg-black/50 flex items-end sm:items-center justify-center" data-testid="datetime-expanded">
+          <div
+            className="bg-white w-full sm:w-auto sm:min-w-[360px] sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-primary text-white p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-bold">Vælg tidspunkt</h2>
+                <button
+                  onClick={handleCancel}
+                  className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="text-2xl font-bold">
+                {pendingDisplayText || "Nu"}
               </div>
             </div>
 
-            {/* OK and Cancel buttons */}
-            <div className="flex gap-2 mb-2">
-              <button
-                onClick={handleCancel}
-                className="flex-1 py-2.5 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
-                data-testid="datetime-cancel"
-              >
-                Annuller
-              </button>
-              <button
-                onClick={handleConfirm}
-                className="flex-1 py-2.5 text-sm text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors font-medium"
-                data-testid="datetime-ok"
-              >
-                OK
-              </button>
+            {/* Content */}
+            <div className="p-4 sm:p-5 flex-1 overflow-y-auto">
+              {/* Date picker */}
+              <div className="mb-5">
+                <label className="text-sm font-medium text-gray-700 block mb-2">Dato</label>
+                <input
+                  type="date"
+                  value={dateValue}
+                  onChange={handleDateChange}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  data-testid="datetime-date-input"
+                />
+              </div>
+
+              {/* Hour picker - large touch targets */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 block mb-2">Klokkeslæt</label>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2" data-testid="datetime-hour-grid">
+                  {hours.map(hour => (
+                    <button
+                      key={hour}
+                      onClick={() => handleHourChange(hour)}
+                      className={`py-3 px-2 text-base font-semibold rounded-xl transition-colors ${
+                        parseInt(timeValue) === hour
+                          ? 'bg-primary text-white shadow-md'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                      data-testid={`datetime-hour-${hour}`}
+                    >
+                      {String(hour).padStart(2, '0')}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Reset button */}
-            <button
-              onClick={() => {
-                onReset();
-                setPendingDateTime(null);
-                setIsExpanded(false);
-              }}
-              className="w-full py-2.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center justify-center gap-2"
-              data-testid="datetime-reset-full"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Nulstil
-            </button>
+            {/* Footer buttons */}
+            <div className="p-4 sm:p-5 border-t border-gray-100 space-y-2">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancel}
+                  className="flex-1 py-3 text-base text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
+                  data-testid="datetime-cancel"
+                >
+                  Annuller
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className="flex-1 py-3 text-base text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors font-semibold"
+                  data-testid="datetime-ok"
+                >
+                  OK
+                </button>
+              </div>
+              <button
+                onClick={handleReset}
+                className="w-full py-3 text-base text-primary hover:bg-primary/10 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
+                data-testid="datetime-reset-full"
+              >
+                <RotateCcw className="w-5 h-5" />
+                Nulstil til nu
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
 
