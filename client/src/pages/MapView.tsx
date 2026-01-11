@@ -523,9 +523,16 @@ function MapClickHandler({
 }) {
   const map = useMapEvents({
     click: (e) => {
+      // Check if a popup is currently open
+      const popupOpen = document.querySelector('.leaflet-popup') !== null;
+
       map.closePopup(); // Close any open spot popup
       onClearSelection(); // Clear selected spot
-      onMapClick(e.latlng.lat, e.latlng.lng);
+
+      // Only show temp badge if no popup was open
+      if (!popupOpen) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
     },
   });
   return null;
