@@ -93,7 +93,6 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E tests against deployed site
-        continue-on-error: true
         run: npx playwright test --project=chromium --reporter=list
         env:
           CI: true

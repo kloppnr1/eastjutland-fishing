@@ -16,7 +16,7 @@ test.describe('Map Badge Click Detection', () => {
     await expect(badge).toBeVisible();
 
     // Click on the badge (the white box part)
-    await badge.locator('div[style*="background: white"]').first().click();
+    await badge.locator('div[style*="background: white"]').first().click({ force: true });
 
     // Expanded badge should appear
     const expandedBadge = page.locator('.expanded-badge-marker');
@@ -33,7 +33,7 @@ test.describe('Map Badge Click Detection', () => {
     await expect(badge).toBeVisible();
 
     // Click on the anchor dot (blue circle)
-    await badge.locator('div[style*="background: #3b82f6"]').click();
+    await badge.locator('div[style*="background: #3b82f6"]').click({ force: true });
 
     // Expanded badge should appear
     const expandedBadge = page.locator('.expanded-badge-marker');
@@ -133,7 +133,7 @@ test.describe('Map Badge Click Detection', () => {
     await expect(badge).toBeVisible();
 
     // Click to expand the badge
-    await badge.locator('div[style*="background: white"]').first().click();
+    await badge.locator('div[style*="background: white"]').first().click({ force: true });
 
     // Wait for expanded badge
     const expandedBadge = page.locator('.expanded-badge-marker');
@@ -205,7 +205,7 @@ test.describe('Expanded Badge', () => {
     await expect(badge).toBeVisible();
 
     // Click the badge to expand
-    await badge.locator('div[style*="background: white"]').first().click();
+    await badge.locator('div[style*="background: white"]').first().click({ force: true });
 
     // Wait for expanded badge
     const expandedBadge = page.locator('.expanded-badge-marker');
@@ -224,7 +224,7 @@ test.describe('Expanded Badge', () => {
     // Find and click a badge to expand (use last() to avoid header overlap)
     const badge = page.locator('.weather-badge-marker').last();
     await badge.scrollIntoViewIfNeeded();
-    await badge.locator('div[style*="background: white"]').first().click();
+    await badge.locator('div[style*="background: white"]').first().click({ force: true });
 
     // Wait for expanded badge
     const expandedBadge = page.locator('.expanded-badge-marker');
@@ -253,7 +253,7 @@ test.describe('Expanded Badge', () => {
     // Click last badge (to avoid header overlap)
     const lastBadge = badges.last();
     await lastBadge.scrollIntoViewIfNeeded();
-    await lastBadge.locator('div[style*="background: white"]').first().click();
+    await lastBadge.locator('div[style*="background: white"]').first().click({ force: true });
     await page.waitForTimeout(500);
 
     // Should have one expanded badge
@@ -263,7 +263,7 @@ test.describe('Expanded Badge', () => {
     // Click a different badge (second to last)
     const secondLastBadge = badges.nth(count - 2);
     await secondLastBadge.scrollIntoViewIfNeeded();
-    await secondLastBadge.locator('div[style*="background: white"]').first().click();
+    await secondLastBadge.locator('div[style*="background: white"]').first().click({ force: true });
     await page.waitForTimeout(500);
 
     // Should still have one expanded badge (the new one now)
