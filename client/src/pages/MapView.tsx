@@ -647,6 +647,18 @@ const createExpandedBadge = (
             margin: 0 auto 10px auto;
           ">
             <img src="${mapData.url}" alt="Kort" style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 256px; height: 256px;" />
+            <!-- Debug: spot marker at calculated position -->
+            <div style="
+              position: absolute;
+              left: ${clampedLeft + mapData.pixelX - 4}px;
+              top: ${clampedTop + mapData.pixelY - 4}px;
+              width: 8px;
+              height: 8px;
+              background: red;
+              border-radius: 50%;
+              border: 2px solid white;
+              z-index: 10;
+            "></div>
           </div>
 
           <!-- Stats row -->
