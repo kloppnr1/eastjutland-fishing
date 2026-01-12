@@ -133,72 +133,105 @@ async function fetchForecastData(lat: number, lng: number, selectedDateTime: Dat
   }
 }
 
-// Generate sparkline SVG path for expanded badge
-function generateBadgeSparkline(forecast: ForecastData | null, width: number, height: number): { svg: string; startLabel: string; endLabel: string; centerLabel: string } {
+// Generate sparkline SVG for expanded badge (same style as TempBadge)
+function generateBadgeSparkline(forecast: ForecastData | null, width: number, height: number): { svg: string; startDate: string; endDate: string; startTemp: string; endTemp: string; centerTemp: string } {
   if (!forecast || forecast.temps.length === 0) {
-    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
+    return { svg: '', startDate: '', endDate: '', startTemp: '', endTemp: '', centerTemp: '' };
   }
 
   const { temps, times, centerIndex } = forecast;
   const validTemps = temps.filter((t): t is number => t !== null);
   if (validTemps.length < 2) {
-    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
+    return { svg: '', startDate: '', endDate: '', startTemp: '', endTemp: '', centerTemp: '' };
   }
 
   const min = Math.min(...validTemps);
   const max = Math.max(...validTemps);
-  const range = Math.max(max - min, 2); // Minimum range of 2 degrees
-  const padding = (range - (max - min)) / 2;
+  const dataRange = max - min;
+  const minRange = 3;
+  const range = Math.max(dataRange, minRange);
+  const padding = (range - dataRange) / 2;
   const adjustedMin = min - padding;
 
-  // Build path
-  const points: { x: number; y: number }[] = [];
-  temps.forEach((temp, i) => {
+  // Center X position for selected datetime
+  const centerX = temps.length > 1 ? (centerIndex / (temps.length - 1)) * width : width / 2;
+
+  // Split temps into past and future based on centerIndex
+  const pastTemps = temps.slice(0, centerIndex + 1);
+  const futureTemps = temps.slice(centerIndex);
+
+  // Build past points (0 to centerX)
+  const pastPoints: { x: number; y: number }[] = [];
+  pastTemps.forEach((temp, i) => {
     if (temp === null) return;
-    const x = (i / (temps.length - 1)) * width;
+    const x = pastTemps.length > 1 ? (i / (pastTemps.length - 1)) * centerX : 0;
     const y = height - ((temp - adjustedMin) / range) * height;
-    points.push({ x, y });
+    pastPoints.push({ x, y });
   });
 
-  if (points.length < 2) {
-    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
-  }
+  // Build future points (centerX to width)
+  const futurePoints: { x: number; y: number }[] = [];
+  futureTemps.forEach((temp, i) => {
+    if (temp === null) return;
+    const x = futureTemps.length > 1 ? centerX + (i / (futureTemps.length - 1)) * (width - centerX) : centerX;
+    const y = height - ((temp - adjustedMin) / range) * height;
+    futurePoints.push({ x, y });
+  });
 
-  const path = `M${points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`;
-  const centerX = (centerIndex / (temps.length - 1)) * width;
+  const pastPath = pastPoints.length > 1
+    ? `M${pastPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`
+    : '';
 
-  // Labels
-  const startTime = times[0] || '';
-  const endTime = times[times.length - 1] || '';
+  const futurePath = futurePoints.length > 1
+    ? `M${futurePoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`
+    : '';
+
+  // Parse date from time string
   const parseDate = (t: string) => {
     const m = t.match(/(\d+)-(\d+)-(\d+)/);
     return m ? `${parseInt(m[3])}/${parseInt(m[2])}` : '';
   };
 
-  const startTemp = validTemps[0];
-  const endTemp = validTemps[validTemps.length - 1];
-  const centerTemp = temps[centerIndex];
+  const startTime = times[0] || '';
+  const endTime = times[times.length - 1] || '';
+  const startTempVal = temps[0];
+  const endTempVal = temps[temps.length - 1];
+  const centerTempVal = temps[centerIndex];
+
+  // Use unique gradient IDs for this badge instance
+  const gradId = Math.random().toString(36).substr(2, 9);
 
   const svg = `
-    <svg width="${width}" height="${height + 25}" style="overflow: visible;">
+    <svg width="${width}" height="${height}" style="overflow: visible;">
       <defs>
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="sparkGradPast${gradId}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
           <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
         </linearGradient>
+        <linearGradient id="sparkGradFuture${gradId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f97316" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+        </linearGradient>
       </defs>
-      <path d="${path} L${width},${height} L0,${height} Z" fill="url(#sparkGrad)"/>
-      <path d="${path}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <line x1="${centerX}" y1="0" x2="${centerX}" y2="${height}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
-      <circle cx="${centerX}" cy="${height - ((centerTemp !== null ? centerTemp : min) - adjustedMin) / range * height}" r="4" fill="#ef4444"/>
+      ${pastPath ? `
+        <path d="${pastPath} L${centerX.toFixed(1)},${height} L0,${height} Z" fill="url(#sparkGradPast${gradId})"/>
+        <path d="${pastPath}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ` : ''}
+      ${futurePath ? `
+        <path d="${futurePath} L${width},${height} L${centerX.toFixed(1)},${height} Z" fill="url(#sparkGradFuture${gradId})"/>
+        <path d="${futurePath}" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>
+      ` : ''}
+      <line x1="${centerX.toFixed(1)}" y1="0" x2="${centerX.toFixed(1)}" y2="${height}" stroke="#ef4444" stroke-width="1.5"/>
     </svg>
   `;
 
   return {
     svg,
-    startLabel: `${parseDate(startTime)} ${startTemp?.toFixed(1) || '--'}°`,
-    endLabel: `${parseDate(endTime)} ${endTemp?.toFixed(1) || '--'}°`,
-    centerLabel: `${centerTemp?.toFixed(1) || '--'}°`
+    startDate: parseDate(startTime),
+    endDate: parseDate(endTime),
+    startTemp: startTempVal !== null ? startTempVal.toFixed(1) + '°' : '--',
+    endTemp: endTempVal !== null ? endTempVal.toFixed(1) + '°' : '--',
+    centerTemp: centerTempVal !== null ? centerTempVal.toFixed(1) + '°' : '--'
   };
 }
 
@@ -641,14 +674,23 @@ const createExpandedBadge = (
           </div>
 
           ${sparkline.svg ? `
-          <!-- Forecast sparkline -->
+          <!-- Forecast sparkline (same style as TempBadge) -->
           <div style="margin-bottom: 6px;">
-            <div style="font-size: 10px; color: #6b7280; margin-bottom: 4px; text-align: center;">Vandtemperatur</div>
             ${sparkline.svg}
-            <div style="display: flex; justify-content: space-between; font-size: 9px; color: #6b7280; margin-top: 2px;">
-              <span>${sparkline.startLabel}</span>
-              <span style="color: #ef4444; font-weight: 600;">${sparkline.centerLabel}</span>
-              <span>${sparkline.endLabel}</span>
+            <!-- Date labels underneath -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; margin-top: 4px;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; background: #f0f9ff; padding: 3px 6px; border-radius: 4px;">
+                <span style="font-weight: 600; color: #1e40af; font-size: 9px;">${sparkline.startDate}</span>
+                <span style="font-size: 11px; font-weight: 700; color: #3b82f6;">${sparkline.startTemp}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 3px 6px; border-radius: 4px;">
+                <span style="color: #991b1b; font-weight: 600; font-size: 9px;">Valgt</span>
+                <span style="font-size: 11px; font-weight: 700; color: #ef4444;">${sparkline.centerTemp}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 3px 6px; border-radius: 4px;">
+                <span style="font-weight: 600; color: #c2410c; font-size: 9px;">${sparkline.endDate}</span>
+                <span style="font-size: 11px; font-weight: 700; color: #f97316;">${sparkline.endTemp}</span>
+              </div>
             </div>
           </div>
           ` : ''}
@@ -975,6 +1017,7 @@ function TempBadge({
   onClose: () => void;
   onAddSpot: () => void;
 }) {
+  const map = useMap();
   const [waterTemp, setWaterTemp] = useState<number | null>(null);
   const [airTemp, setAirTemp] = useState<number | null>(null);
   const [windSpeed, setWindSpeed] = useState<number | null>(null);
@@ -985,6 +1028,27 @@ function TempBadge({
   const [loading, setLoading] = useState(true);
   const [placeName, setPlaceName] = useState<string | null>(null);
   const markerRef = useRef<L.Marker>(null);
+
+  // Auto-pan to show temp badge
+  useEffect(() => {
+    if (!coordinates) return;
+
+    const markerPoint = map.latLngToContainerPoint([coordinates.lat, coordinates.lng]);
+    const mapSize = map.getSize();
+
+    // TempBadge is ~235px tall above marker
+    const badgeHeight = 250;
+    const padding = 50;
+
+    if (markerPoint.y < badgeHeight + padding) {
+      const offsetY = badgeHeight + padding - markerPoint.y;
+      const newCenter = map.containerPointToLatLng([
+        mapSize.x / 2,
+        mapSize.y / 2 - offsetY
+      ]);
+      map.panTo(newCenter, { animate: true, duration: 0.3 });
+    }
+  }, [map, coordinates?.lat, coordinates?.lng]);
 
   // Reverse geocoding to get place name
   const fetchPlaceName = useCallback(async () => {
