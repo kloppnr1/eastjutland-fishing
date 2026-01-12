@@ -1046,8 +1046,8 @@ function TempBadge({
     const markerPoint = map.latLngToContainerPoint([coordinates.lat, coordinates.lng]);
     const mapSize = map.getSize();
 
-    // TempBadge is ~235px tall above marker
-    const badgeHeight = 250;
+    // TempBadge is ~323px tall above marker (with map image)
+    const badgeHeight = 340;
     const padding = 50;
 
     if (markerPoint.y < badgeHeight + padding) {
@@ -1201,6 +1201,15 @@ function TempBadge({
     ? historicalTemps[futureStartIndex - 1]
     : null;
 
+  // Get map tile data for TempBadge
+  const mapData = getStaticMapData(coordinates.lat, coordinates.lng);
+  const containerWidth = 200;
+  const containerHeight = 80;
+  const gridLeft = containerWidth / 2 - mapData.pixelX;
+  const gridTop = containerHeight / 2 - mapData.pixelY;
+  const clampedLeft = Math.max(-(mapData.gridSize - containerWidth), Math.min(0, gridLeft));
+  const clampedTop = Math.max(-(mapData.gridSize - containerHeight), Math.min(0, gridTop));
+
   const clickedLocationIcon = divIcon({
     className: "clicked-location-marker",
     html: `
@@ -1234,6 +1243,18 @@ function TempBadge({
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(${arrowRotation}deg);"><path d="M12 2L12 22M12 2L6 8M12 2L18 8"/></svg>
               ${windText}
             </span>
+          </div>
+          <!-- Map tiles 2x2 grid (centered on location) -->
+          <div style="
+            position: relative;
+            width: ${containerWidth}px;
+            height: ${containerHeight}px;
+            border-radius: 8px;
+            overflow: hidden;
+          ">
+            <div style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 512px; height: 512px;">
+              ${mapData.tiles.map((t: {url: string, x: number, y: number}) => `<img src="${t.url}" style="position: absolute; left: ${t.x}px; top: ${t.y}px; width: 256px; height: 256px;" />`).join('')}
+            </div>
           </div>
           <!-- Sparkline -->
           <svg width="200" height="50" style="overflow: visible;">
@@ -1299,8 +1320,8 @@ function TempBadge({
         "></div>
       </div>
     `,
-    iconSize: [280, 235],
-    iconAnchor: [140, 235],
+    iconSize: [280, 323],
+    iconAnchor: [140, 323],
   });
 
   // Invisible button marker positioned over the "Add spot" button (left-aligned)
@@ -1308,7 +1329,7 @@ function TempBadge({
     className: "add-spot-button-marker",
     html: `<div style="width: 90px; height: 30px; cursor: pointer;"></div>`,
     iconSize: [90, 30],
-    iconAnchor: [110, 52], // Position over the left-aligned button
+    iconAnchor: [110, 140], // Position over the left-aligned button (adjusted for map image)
   });
 
   return (
