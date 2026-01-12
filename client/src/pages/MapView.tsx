@@ -1575,7 +1575,10 @@ export default function MapView() {
 
       <AddSpotModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setTempBadgeCoords(null);
+        }}
         coordinates={tempBadgeCoords}
       />
     </div>
