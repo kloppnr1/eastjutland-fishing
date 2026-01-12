@@ -516,10 +516,26 @@ const latLngToTile = (lat: number, lng: number, zoom: number) => {
   return { x, y, z: zoom };
 };
 
-// Generate static map tile URL for a location (uses same tiles as Leaflet map)
-const getStaticMapUrl = (lat: number, lng: number) => {
-  const { x, y, z } = latLngToTile(lat, lng, 14); // zoom 14 for wider view
-  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+// Generate static map tile URL and calculate offset to center the spot
+const getStaticMapData = (lat: number, lng: number) => {
+  const zoom = 14;
+  const n = Math.pow(2, zoom);
+
+  // Calculate exact tile coordinates (with fractional part)
+  const xExact = (lng + 180) / 360 * n;
+  const yExact = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
+
+  // Get tile indices
+  const tileX = Math.floor(xExact);
+  const tileY = Math.floor(yExact);
+
+  // Calculate pixel position within the 256x256 tile
+  const pixelX = (xExact - tileX) * 256;
+  const pixelY = (yExact - tileY) * 256;
+
+  const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
+
+  return { url, pixelX, pixelY };
 };
 
 // Expanded badge when spot is selected - shows full info with forecast sparkline
@@ -544,7 +560,21 @@ const createExpandedBadge = (
   const lng = Number(spot.longitude);
 
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
-  const mapTileUrl = getStaticMapUrl(lat, lng);
+  const mapData = getStaticMapData(lat, lng);
+
+  // Calculate object-position to center the spot in the visible 200x80 area
+  // The image is 256x256, visible area is ~200x80
+  // We want pixelX,pixelY to appear at center of visible area (100, 40)
+  const visibleWidth = 200;
+  const visibleHeight = 80;
+  const offsetX = mapData.pixelX - visibleWidth / 2;
+  const offsetY = mapData.pixelY - visibleHeight / 2;
+  // Convert to percentage for object-position (relative to overflow area)
+  const posX = (offsetX / (256 - visibleWidth)) * 100;
+  const posY = (offsetY / (256 - visibleHeight)) * 100;
+  // Clamp to 0-100%
+  const clampedPosX = Math.max(0, Math.min(100, posX));
+  const clampedPosY = Math.max(0, Math.min(100, posY));
 
   // Generate sparkline
   const sparkline = generateBadgeSparkline(forecast, 180, 40);
@@ -607,7 +637,7 @@ const createExpandedBadge = (
             text-align: center;
           ">${spot.name}</div>
 
-          <!-- Map tile -->
+          <!-- Map tile (centered on spot location) -->
           <div style="
             width: 100%;
             height: 80px;
@@ -615,7 +645,7 @@ const createExpandedBadge = (
             overflow: hidden;
             margin-bottom: 10px;
           ">
-            <img src="${mapTileUrl}" alt="Kort" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
+            <img src="${mapData.url}" alt="Kort" style="width: 256px; height: 256px; object-fit: none; object-position: ${clampedPosX}% ${clampedPosY}%;" />
           </div>
 
           <!-- Stats row -->
