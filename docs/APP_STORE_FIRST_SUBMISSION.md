@@ -4,6 +4,57 @@ Complete walkthrough for submitting Østjylland Lystfisker to the App Store.
 
 ---
 
+## Part 0: Mac Setup (One-time)
+
+### 0.1 Install Xcode
+
+1. Open **App Store** on your Mac
+2. Search for **Xcode**
+3. Click **Get** / **Install** (it's free but large ~12GB)
+4. Wait for download and installation
+5. Open Xcode once and accept the license agreement
+
+### 0.2 Install Xcode Command Line Tools
+
+Open **Terminal** (Applications → Utilities → Terminal) and run:
+
+```bash
+xcode-select --install
+```
+
+Click "Install" when prompted.
+
+### 0.3 Install Node.js
+
+**Option A: Download installer (easiest)**
+1. Go to [nodejs.org](https://nodejs.org)
+2. Download the **LTS** version (green button)
+3. Open the downloaded .pkg file
+4. Follow the installer steps
+
+**Option B: Using Homebrew**
+```bash
+# Install Homebrew first (if you don't have it)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Then install Node.js
+brew install node
+```
+
+### 0.4 Verify Installation
+
+Open Terminal and run:
+
+```bash
+node --version
+npm --version
+git --version
+```
+
+You should see version numbers for each. If any command fails, that tool isn't installed correctly.
+
+---
+
 ## Part 1: Apple Developer Setup (One-time)
 
 ### 1.1 Verify Your Apple Developer Membership
