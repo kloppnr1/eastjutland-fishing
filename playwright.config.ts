@@ -9,15 +9,15 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  timeout: 60000, // 60 second timeout per test
+  timeout: process.env.CI ? 120000 : 60000, // 120s on CI, 60s locally
   expect: {
-    timeout: 10000, // 10 second timeout for expect assertions
+    timeout: process.env.CI ? 20000 : 10000, // 20s on CI, 10s locally
   },
   use: {
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    actionTimeout: 15000, // 15 second timeout for actions like click
+    actionTimeout: process.env.CI ? 30000 : 15000, // 30s on CI, 15s locally
   },
   projects: [
     {

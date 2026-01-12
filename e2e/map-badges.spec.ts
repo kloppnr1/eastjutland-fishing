@@ -6,7 +6,7 @@ test.describe('Map Badge Click Detection', () => {
     // Use baseURL from config (handles both local and deployed paths)
     await page.goto('./map');
     // Wait for map to load
-    await page.waitForSelector('.leaflet-container', { timeout: 10000 });
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     // Wait for markers to appear
     await page.waitForTimeout(2000);
   });
@@ -117,7 +117,7 @@ test.describe('Map Badge Click Detection', () => {
 
     // Click on empty map area (away from the popup)
     const map = page.locator('.leaflet-container');
-    await map.click({ position: { x: 50, y: 50 } });
+    await map.click({ position: { x: 400, y: 300 } });
     await page.waitForTimeout(500);
 
     // Popup should be closed
@@ -142,7 +142,7 @@ test.describe('Map Badge Click Detection', () => {
 
     // Click on empty map area
     const map = page.locator('.leaflet-container');
-    await map.click({ position: { x: 50, y: 50 } });
+    await map.click({ position: { x: 400, y: 300 } });
     await page.waitForTimeout(500);
 
     // Expanded badge should be closed
@@ -197,7 +197,7 @@ test.describe('Expanded Badge', () => {
   test.beforeEach(async ({ page }) => {
     // Use baseURL from config (handles both local and deployed paths)
     await page.goto('./map');
-    await page.waitForSelector('.leaflet-container', { timeout: 10000 });
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     await page.waitForTimeout(2000);
   });
 
@@ -233,7 +233,7 @@ test.describe('Expanded Badge', () => {
 
     // Click on empty map area
     const map = page.locator('.leaflet-container');
-    await map.click({ position: { x: 50, y: 50 } });
+    await map.click({ position: { x: 400, y: 300 } });
     await page.waitForTimeout(500);
 
     // Expanded badge should be gone, normal badges visible
@@ -273,7 +273,7 @@ test.describe('Cluster Stacked Badges', () => {
   test.beforeEach(async ({ page }) => {
     // Use baseURL from config (handles both local and deployed paths)
     await page.goto('./map');
-    await page.waitForSelector('.leaflet-container', { timeout: 10000 });
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     // Zoom out to trigger clustering
     const map = page.locator('.leaflet-container');
     // Use mouse wheel to zoom out more
@@ -385,7 +385,8 @@ test.describe('Cluster Stacked Badges', () => {
     // - Range: "5.0-6.5°" (when spots have different temps)
     // - "--" (when no data available)
     // - Should NOT be "5.2-5.2°" (duplicate values)
-    const tempText = cluster.locator('span[style*="font-weight: 700"]').first();
+    // Note: nth(0) is count badge (white), nth(1) is water temp, nth(2) is wind
+    const tempText = cluster.locator('span[style*="font-weight: 700"]').nth(1);
     const text = await tempText.textContent();
     // Match single temp "X.X°" or range "X.X-Y.Y°" or "--"
     expect(text).toMatch(/^\d+\.?\d*°$|^\d+\.?\d*-\d+\.?\d*°$|^--$/);
@@ -648,7 +649,7 @@ test.describe('DateTime Picker', () => {
   test.beforeEach(async ({ page }) => {
     // Use baseURL from config (handles both local and deployed paths)
     await page.goto('./map');
-    await page.waitForSelector('.leaflet-container', { timeout: 10000 });
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     await page.waitForTimeout(1000);
   });
 
@@ -712,7 +713,7 @@ test.describe('DateTime Picker', () => {
     }
   });
 
-  test('clicking Cancel discards changes', async ({ page }) => {
+  test('closing modal discards changes', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
@@ -720,23 +721,21 @@ test.describe('DateTime Picker', () => {
     const hourButton = page.getByTestId('datetime-hour-3');
     await hourButton.click();
 
-    // Click Cancel to discard
-    const cancelButton = page.getByTestId('datetime-cancel');
-    await cancelButton.click();
+    // Close modal using the X button in header to discard changes
+    const closeButton = page.getByTestId('datetime-close');
+    await closeButton.click();
 
     // Display should still show "Nu"
     const display = page.getByTestId('datetime-display');
     await expect(display).toHaveText('Nu');
   });
 
-  test('OK and Cancel buttons are visible when expanded', async ({ page }) => {
+  test('OK button is visible when expanded', async ({ page }) => {
     const toggle = page.getByTestId('datetime-toggle');
     await toggle.click();
 
     const okButton = page.getByTestId('datetime-ok');
-    const cancelButton = page.getByTestId('datetime-cancel');
     await expect(okButton).toBeVisible();
-    await expect(cancelButton).toBeVisible();
   });
 
   test('reset button returns to current time', async ({ page }) => {

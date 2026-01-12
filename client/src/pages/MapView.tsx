@@ -1274,7 +1274,11 @@ function DateTimePicker({
 
       {/* Full-screen modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-[2000] bg-black/50 flex items-end sm:items-center justify-center" data-testid="datetime-expanded">
+        <div
+          className="fixed inset-0 z-[2000] bg-black/50 flex items-end sm:items-center justify-center"
+          data-testid="datetime-expanded"
+          onClick={handleCancel}
+        >
           <div
             className="bg-white w-full sm:w-auto sm:min-w-[360px] sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
@@ -1286,6 +1290,7 @@ function DateTimePicker({
                 <button
                   onClick={handleCancel}
                   className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                  data-testid="datetime-close"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1335,22 +1340,13 @@ function DateTimePicker({
 
             {/* Footer buttons */}
             <div className="p-4 sm:p-5 border-t border-gray-100 space-y-2">
-              <div className="flex gap-3">
-                <button
-                  onClick={handleCancel}
-                  className="flex-1 py-3 text-base text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors font-medium"
-                  data-testid="datetime-cancel"
-                >
-                  Annuller
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  className="flex-1 py-3 text-base text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors font-semibold"
-                  data-testid="datetime-ok"
-                >
-                  OK
-                </button>
-              </div>
+              <button
+                onClick={handleConfirm}
+                className="w-full py-3 text-base text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors font-semibold"
+                data-testid="datetime-ok"
+              >
+                OK
+              </button>
               <button
                 onClick={handleReset}
                 className="w-full py-3 text-base text-primary hover:bg-primary/10 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
