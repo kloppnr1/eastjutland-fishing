@@ -313,7 +313,7 @@ const latLngToTile = (lat: number, lng: number, zoom: number) => {
 
 // Generate static map tile URL for a location (uses same tiles as Leaflet map)
 const getStaticMapUrl = (lat: number, lng: number) => {
-  const { x, y, z } = latLngToTile(lat, lng, 15); // zoom 15 for good detail
+  const { x, y, z } = latLngToTile(lat, lng, 14); // zoom 14 for wider view
   return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 };
 
