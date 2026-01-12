@@ -562,19 +562,18 @@ const createExpandedBadge = (
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const mapData = getStaticMapData(lat, lng);
 
-  // Calculate object-position to center the spot in the visible 200x80 area
-  // The image is 256x256, visible area is ~200x80
-  // We want pixelX,pixelY to appear at center of visible area (100, 40)
-  const visibleWidth = 200;
-  const visibleHeight = 80;
-  const offsetX = mapData.pixelX - visibleWidth / 2;
-  const offsetY = mapData.pixelY - visibleHeight / 2;
-  // Convert to percentage for object-position (relative to overflow area)
-  const posX = (offsetX / (256 - visibleWidth)) * 100;
-  const posY = (offsetY / (256 - visibleHeight)) * 100;
-  // Clamp to 0-100%
-  const clampedPosX = Math.max(0, Math.min(100, posX));
-  const clampedPosY = Math.max(0, Math.min(100, posY));
+  // Calculate object-position to center the spot in the visible area
+  // Container is ~200x80, image is 256x256
+  // We want the spot (at pixelX, pixelY in the image) to appear at center of container
+  const containerWidth = 200;
+  const containerHeight = 80;
+  // Offset = where in image - where we want it in container
+  // Negative offset shifts image left/up, positive shifts right/down
+  const offsetX = containerWidth / 2 - mapData.pixelX;
+  const offsetY = containerHeight / 2 - mapData.pixelY;
+  // Clamp so we don't show outside the tile
+  const clampedOffsetX = Math.max(containerWidth - 256, Math.min(0, offsetX));
+  const clampedOffsetY = Math.max(containerHeight - 256, Math.min(0, offsetY));
 
   // Generate sparkline
   const sparkline = generateBadgeSparkline(forecast, 180, 40);
@@ -645,7 +644,7 @@ const createExpandedBadge = (
             overflow: hidden;
             margin-bottom: 10px;
           ">
-            <img src="${mapData.url}" alt="Kort" style="width: 256px; height: 256px; object-fit: none; object-position: ${clampedPosX}% ${clampedPosY}%;" />
+            <img src="${mapData.url}" alt="Kort" style="width: 256px; height: 256px; object-fit: none; object-position: ${clampedOffsetX}px ${clampedOffsetY}px;" />
           </div>
 
           <!-- Stats row -->
