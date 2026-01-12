@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Anchor, Map, List, Settings } from "lucide-react";
+import { Fish, Map, List, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Header() {
@@ -10,7 +10,7 @@ export function Header() {
       <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-            <Anchor className="w-6 h-6 text-primary" />
+            <Fish className="w-6 h-6 text-primary" />
           </div>
           <div className="flex flex-col">
             <span className="font-display font-bold text-xl leading-none text-primary">Østjylland</span>
