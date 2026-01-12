@@ -516,7 +516,7 @@ const latLngToTile = (lat: number, lng: number, zoom: number) => {
   return { x, y, z: zoom };
 };
 
-// Generate static map tile URL and calculate offset to center the spot
+// Generate 2x2 tile grid URLs and calculate offset to center the spot
 const getStaticMapData = (lat: number, lng: number) => {
   const zoom = 14;
   const n = Math.pow(2, zoom);
@@ -529,13 +529,29 @@ const getStaticMapData = (lat: number, lng: number) => {
   const tileX = Math.floor(xExact);
   const tileY = Math.floor(yExact);
 
-  // Calculate pixel position within the 256x256 tile
-  const pixelX = (xExact - tileX) * 256;
-  const pixelY = (yExact - tileY) * 256;
+  // Calculate pixel position within the tile
+  const pixelInTileX = (xExact - tileX) * 256;
+  const pixelInTileY = (yExact - tileY) * 256;
 
-  const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
+  // Choose 2x2 grid so spot is in inner area (for better centering)
+  // If spot is in left half of tile, use (tileX-1, tileX), else (tileX, tileX+1)
+  const startTileX = pixelInTileX < 128 ? tileX - 1 : tileX;
+  const startTileY = pixelInTileY < 128 ? tileY - 1 : tileY;
 
-  return { url, pixelX, pixelY };
+  // Calculate pixel position in the 512x512 grid
+  const pixelX = (tileX - startTileX) * 256 + pixelInTileX;
+  const pixelY = (tileY - startTileY) * 256 + pixelInTileY;
+
+  // Generate URLs for 2x2 grid (top-left, top-right, bottom-left, bottom-right)
+  const baseUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile";
+  const tiles = [
+    { url: `${baseUrl}/${zoom}/${startTileY}/${startTileX}`, x: 0, y: 0 },
+    { url: `${baseUrl}/${zoom}/${startTileY}/${startTileX + 1}`, x: 256, y: 0 },
+    { url: `${baseUrl}/${zoom}/${startTileY + 1}/${startTileX}`, x: 0, y: 256 },
+    { url: `${baseUrl}/${zoom}/${startTileY + 1}/${startTileX + 1}`, x: 256, y: 256 },
+  ];
+
+  return { tiles, pixelX, pixelY, gridSize: 512 };
 };
 
 // Expanded badge when spot is selected - shows full info with forecast sparkline
@@ -563,18 +579,17 @@ const createExpandedBadge = (
   const mapData = getStaticMapData(lat, lng);
 
   // Calculate position to center the spot in the visible area
-  // Container is fixed 200x80, image is 256x256
-  // We position the image absolutely so the spot appears at container center
+  // Container is fixed 200x80, grid is 512x512 (2x2 tiles)
+  // With 512x512 grid, spot will be in range 128-384 for both x and y
+  // This gives plenty of room to center in 200x80 container
   const containerWidth = 200;
   const containerHeight = 80;
-  // Position image so spot (pixelX, pixelY) appears at container center (100, 40)
-  const imageLeft = containerWidth / 2 - mapData.pixelX;
-  const imageTop = containerHeight / 2 - mapData.pixelY;
-  // Clamp so image fills the container (no empty space)
-  // Left can range from -(imageWidth - containerWidth) to 0, i.e., -56 to 0
-  // Top can range from -(imageHeight - containerHeight) to 0, i.e., -176 to 0
-  const clampedLeft = Math.max(-(256 - containerWidth), Math.min(0, imageLeft));
-  const clampedTop = Math.max(-(256 - containerHeight), Math.min(0, imageTop));
+  // Position grid so spot appears at container center
+  const gridLeft = containerWidth / 2 - mapData.pixelX;
+  const gridTop = containerHeight / 2 - mapData.pixelY;
+  // Clamp so grid fills container (no empty space)
+  const clampedLeft = Math.max(-(mapData.gridSize - containerWidth), Math.min(0, gridLeft));
+  const clampedTop = Math.max(-(mapData.gridSize - containerHeight), Math.min(0, gridTop));
 
   // Generate sparkline
   const sparkline = generateBadgeSparkline(forecast, 180, 40);
@@ -637,7 +652,7 @@ const createExpandedBadge = (
             text-align: center;
           ">${spot.name}</div>
 
-          <!-- Map tile (centered on spot location) -->
+          <!-- Map tiles 2x2 grid (centered on spot location) -->
           <div style="
             position: relative;
             width: ${containerWidth}px;
@@ -646,19 +661,10 @@ const createExpandedBadge = (
             overflow: hidden;
             margin: 0 auto 10px auto;
           ">
-            <img src="${mapData.url}" alt="Kort" style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 256px; height: 256px;" />
-            <!-- Debug: spot marker at calculated position -->
-            <div style="
-              position: absolute;
-              left: ${clampedLeft + mapData.pixelX - 4}px;
-              top: ${clampedTop + mapData.pixelY - 4}px;
-              width: 8px;
-              height: 8px;
-              background: red;
-              border-radius: 50%;
-              border: 2px solid white;
-              z-index: 10;
-            "></div>
+            <!-- 2x2 tile grid -->
+            <div style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 512px; height: 512px;">
+              ${mapData.tiles.map((t: {url: string, x: number, y: number}) => `<img src="${t.url}" style="position: absolute; left: ${t.x}px; top: ${t.y}px; width: 256px; height: 256px;" />`).join('')}
+            </div>
           </div>
 
           <!-- Stats row -->
