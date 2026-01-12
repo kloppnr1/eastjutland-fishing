@@ -31,7 +31,7 @@ import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
 // Forecast cache for sparklines
-const FORECAST_CACHE_KEY = "ostjylland-forecast-cache-v1";
+const FORECAST_CACHE_KEY = "ostjylland-forecast-cache-v2";
 const FORECAST_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 interface ForecastData {
@@ -592,16 +592,16 @@ const createExpandedBadge = (
 ) => {
   // Use forecast values at selected time if available, otherwise fall back to current values
   const idx = forecast?.centerIndex ?? -1;
-  const waterTemp = (forecast && idx >= 0 && forecast.temps[idx] != null)
+  const waterTemp = (forecast && idx >= 0 && forecast.temps?.[idx] != null)
     ? forecast.temps[idx]
     : spot.currentWaterTemp;
-  const airTemp = (forecast && idx >= 0 && forecast.airTemps[idx] != null)
+  const airTemp = (forecast && idx >= 0 && forecast.airTemps?.[idx] != null)
     ? forecast.airTemps[idx]
     : spot.currentAirTemp;
-  const windSpeed = (forecast && idx >= 0 && forecast.windSpeeds[idx] != null)
+  const windSpeed = (forecast && idx >= 0 && forecast.windSpeeds?.[idx] != null)
     ? forecast.windSpeeds[idx]
     : spot.windSpeed;
-  const windDir = (forecast && idx >= 0 && forecast.windDirections[idx] != null)
+  const windDir = (forecast && idx >= 0 && forecast.windDirections?.[idx] != null)
     ? forecast.windDirections[idx]
     : spot.windDirection;
   const lat = Number(spot.latitude);
