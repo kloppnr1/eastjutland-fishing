@@ -4,7 +4,9 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
-  base: process.env.NODE_ENV === "production" ? "/eastjutland-fishing/" : "/",
+  // For Capacitor builds, use "/" base; for GitHub Pages, use "/eastjutland-fishing/"
+  base: process.env.CAPACITOR_BUILD === "true" ? "/" :
+        (process.env.NODE_ENV === "production" ? "/eastjutland-fishing/" : "/"),
   plugins: [
     react(),
     runtimeErrorOverlay(),

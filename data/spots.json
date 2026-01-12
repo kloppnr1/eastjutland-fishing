@@ -228,23 +228,6 @@
       "imageUrl": null,
       "webcamUrl": "https://hirtshals-fyrtaarn.dk/webcam/webcamimage.jpg",
       "lastUpdated": null
-    },
-    {
-      "id": 33,
-      "name": "Elsegårde Strand",
-      "latitude": "56.149304",
-      "longitude": "10.739136",
-      "description": "",
-      "spotType": "fishing",
-      "bestFor": "",
-      "imageUrl": null,
-      "webcamUrl": null,
-      "timelapseUrl": null,
-      "currentWaterTemp": null,
-      "currentAirTemp": null,
-      "windSpeed": null,
-      "windDirection": null,
-      "lastUpdated": null
     }
   ],
   "nextId": 34
