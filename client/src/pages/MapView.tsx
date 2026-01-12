@@ -767,6 +767,65 @@ function FlyToLocation({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+// Component to pan map so expanded badge is in view
+function PanToExpandedBadge({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    // Calculate pixel position of the marker
+    const markerPoint = map.latLngToContainerPoint([lat, lng]);
+    const mapSize = map.getSize();
+
+    // Expanded badge is ~350px tall (above marker), needs ~200px clearance above
+    const badgeHeight = 350;
+    const padding = 50;
+
+    // Check if badge would be cut off at top
+    if (markerPoint.y < badgeHeight + padding) {
+      // Pan down to show badge - offset by the amount needed
+      const offsetY = badgeHeight + padding - markerPoint.y;
+      const newCenter = map.containerPointToLatLng([
+        mapSize.x / 2,
+        mapSize.y / 2 - offsetY
+      ]);
+      map.panTo(newCenter, { animate: true, duration: 0.3 });
+    }
+    // Check if marker is too close to bottom
+    else if (markerPoint.y > mapSize.y - padding - 50) {
+      const offsetY = markerPoint.y - (mapSize.y - padding - 50);
+      const newCenter = map.containerPointToLatLng([
+        mapSize.x / 2,
+        mapSize.y / 2 + offsetY
+      ]);
+      map.panTo(newCenter, { animate: true, duration: 0.3 });
+    }
+
+    // Check horizontal bounds
+    const badgeWidth = 280;
+    if (markerPoint.x < badgeWidth / 2 + padding) {
+      const offsetX = badgeWidth / 2 + padding - markerPoint.x;
+      const currentCenter = map.getCenter();
+      const centerPoint = map.latLngToContainerPoint(currentCenter);
+      const newCenter = map.containerPointToLatLng([
+        centerPoint.x - offsetX,
+        centerPoint.y
+      ]);
+      map.panTo(newCenter, { animate: true, duration: 0.3 });
+    } else if (markerPoint.x > mapSize.x - badgeWidth / 2 - padding) {
+      const offsetX = markerPoint.x - (mapSize.x - badgeWidth / 2 - padding);
+      const currentCenter = map.getCenter();
+      const centerPoint = map.latLngToContainerPoint(currentCenter);
+      const newCenter = map.containerPointToLatLng([
+        centerPoint.x + offsetX,
+        centerPoint.y
+      ]);
+      map.panTo(newCenter, { animate: true, duration: 0.3 });
+    }
+  }, [map, lat, lng]);
+
+  return null;
+}
+
 // Component to track zoom level
 function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
   const map = useMapEvents({
@@ -1678,6 +1737,15 @@ export default function MapView() {
             {targetLocation && (
               <FlyToLocation lat={targetLocation.lat} lng={targetLocation.lng} />
             )}
+            {selectedSpotId && spots && (() => {
+              const selectedSpot = spots.find(s => s.id === selectedSpotId);
+              return selectedSpot ? (
+                <PanToExpandedBadge
+                  lat={Number(selectedSpot.latitude)}
+                  lng={Number(selectedSpot.longitude)}
+                />
+              ) : null;
+            })()}
 
             {/* Webcam spots (not clustered) */}
             {spots?.filter(spot => spot.spotType === "webcam").map((spot) => (
