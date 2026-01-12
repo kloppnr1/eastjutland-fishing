@@ -652,6 +652,22 @@ const createExpandedBadge = (
             text-align: center;
           ">${spot.name}</div>
 
+          <!-- Stats row (same style as TempBadge) -->
+          <div style="display: flex; align-items: center; gap: 16px; justify-content: center; margin-bottom: 10px;">
+            <span style="color: #2563eb; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+              ${waterTemp != null ? waterTemp.toFixed(1) + '°' : '--'}
+            </span>
+            <span style="color: #f97316; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
+              ${airTemp != null ? airTemp.toFixed(1) + '°' : '--'}
+            </span>
+            <span style="color: #4b5563; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(${windDir != null ? windDir + 180 : 0}deg);"><path d="M12 2L12 22M12 2L6 8M12 2L18 8"/></svg>
+              ${windSpeed != null ? windSpeed.toFixed(0) : '--'}
+            </span>
+          </div>
+
           <!-- Map tiles 2x2 grid (centered on spot location) -->
           <div style="
             position: relative;
@@ -665,22 +681,6 @@ const createExpandedBadge = (
             <div style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 512px; height: 512px;">
               ${mapData.tiles.map((t: {url: string, x: number, y: number}) => `<img src="${t.url}" style="position: absolute; left: ${t.x}px; top: ${t.y}px; width: 256px; height: 256px;" />`).join('')}
             </div>
-          </div>
-
-          <!-- Stats row (same style as TempBadge) -->
-          <div style="display: flex; align-items: center; gap: 16px; justify-content: center; margin-bottom: ${sparkline.svg ? '10px' : '0'};">
-            <span style="color: #2563eb; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
-              ${waterTemp != null ? waterTemp.toFixed(1) + '°' : '--'}
-            </span>
-            <span style="color: #f97316; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
-              ${airTemp != null ? airTemp.toFixed(1) + '°' : '--'}
-            </span>
-            <span style="color: #4b5563; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(${windDir != null ? windDir + 180 : 0}deg);"><path d="M12 2L12 22M12 2L6 8M12 2L18 8"/></svg>
-              ${windSpeed != null ? windSpeed.toFixed(0) : '--'}
-            </span>
           </div>
 
           ${sparkline.svg ? `
