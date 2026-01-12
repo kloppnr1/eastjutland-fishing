@@ -134,15 +134,15 @@ async function fetchForecastData(lat: number, lng: number, selectedDateTime: Dat
 }
 
 // Generate sparkline SVG for expanded badge (same style as TempBadge)
-function generateBadgeSparkline(forecast: ForecastData | null, width: number, height: number): { svg: string; startDate: string; endDate: string; startTemp: string; endTemp: string; centerTemp: string } {
+function generateBadgeSparkline(forecast: ForecastData | null, width: number, height: number): { svg: string; startDate: string; endDate: string; centerDate: string; startTemp: string; endTemp: string; centerTemp: string } {
   if (!forecast || forecast.temps.length === 0) {
-    return { svg: '', startDate: '', endDate: '', startTemp: '', endTemp: '', centerTemp: '' };
+    return { svg: '', startDate: '', endDate: '', centerDate: '', startTemp: '', endTemp: '', centerTemp: '' };
   }
 
   const { temps, times, centerIndex } = forecast;
   const validTemps = temps.filter((t): t is number => t !== null);
   if (validTemps.length < 2) {
-    return { svg: '', startDate: '', endDate: '', startTemp: '', endTemp: '', centerTemp: '' };
+    return { svg: '', startDate: '', endDate: '', centerDate: '', startTemp: '', endTemp: '', centerTemp: '' };
   }
 
   const min = Math.min(...validTemps);
@@ -194,6 +194,7 @@ function generateBadgeSparkline(forecast: ForecastData | null, width: number, he
 
   const startTime = times[0] || '';
   const endTime = times[times.length - 1] || '';
+  const centerTime = times[centerIndex] || '';
   const startTempVal = temps[0];
   const endTempVal = temps[temps.length - 1];
   const centerTempVal = temps[centerIndex];
@@ -229,6 +230,7 @@ function generateBadgeSparkline(forecast: ForecastData | null, width: number, he
     svg,
     startDate: parseDate(startTime),
     endDate: parseDate(endTime),
+    centerDate: parseDate(centerTime),
     startTemp: startTempVal !== null ? startTempVal.toFixed(1) + '°' : '--',
     endTemp: endTempVal !== null ? endTempVal.toFixed(1) + '°' : '--',
     centerTemp: centerTempVal !== null ? centerTempVal.toFixed(1) + '°' : '--'
@@ -694,7 +696,7 @@ const createExpandedBadge = (
                 <span style="font-size: 12px; font-weight: 700; color: #3b82f6;">${sparkline.startTemp}</span>
               </div>
               <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 4px 8px; border-radius: 6px;">
-                <span style="color: #991b1b; font-weight: 600; font-size: 10px;">Valgt</span>
+                <span style="color: #991b1b; font-weight: 600;">${sparkline.centerDate}</span>
                 <span style="font-size: 12px; font-weight: 700; color: #ef4444;">${sparkline.centerTemp}</span>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 4px 8px; border-radius: 6px;">
@@ -1194,6 +1196,9 @@ function TempBadge({
   // Get start, now, and end dates/temps for labels
   const startDate = historicalDates.length > 0 ? historicalDates[0] : '';
   const endDate = historicalDates.length > 0 ? historicalDates[historicalDates.length - 1] : '';
+  const nowDate = futureStartIndex > 0 && historicalDates[futureStartIndex - 1]
+    ? historicalDates[futureStartIndex - 1]
+    : (historicalDates.length > 0 ? historicalDates[Math.floor(historicalDates.length / 2)] : '');
   const validTemps = historicalTemps.filter((t): t is number => t !== null);
   const startTemp = validTemps.length > 0 ? validTemps[0] : null;
   const endTemp = validTemps.length > 0 ? validTemps[validTemps.length - 1] : null;
@@ -1285,7 +1290,7 @@ function TempBadge({
               <span style="font-size: 12px; font-weight: 700; color: #3b82f6;">${startTemp !== null ? startTemp.toFixed(1) + '°' : ''}</span>
             </div>
             <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 4px 8px; border-radius: 6px;">
-              <span style="color: #991b1b; font-weight: 600; font-size: 10px;">Nu</span>
+              <span style="color: #991b1b; font-weight: 600;">${nowDate}</span>
               <span style="font-size: 12px; font-weight: 700; color: #ef4444;">${nowTemp !== null ? nowTemp.toFixed(1) + '°' : ''}</span>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 4px 8px; border-radius: 6px;">
