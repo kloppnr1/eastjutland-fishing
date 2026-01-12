@@ -11,6 +11,8 @@ import { resolveImageUrl } from "@/lib/image-url";
 interface EditingSpot {
   id: number;
   name: string;
+  latitude: string;
+  longitude: string;
   description: string | null;
   bestFor: string | null;
   imageUrl: string | null;
@@ -72,6 +74,8 @@ export default function Admin() {
     setEditingSpot({
       id: spot.id,
       name: spot.name,
+      latitude: spot.latitude,
+      longitude: spot.longitude,
       description: spot.description,
       bestFor: spot.bestFor,
       imageUrl: spot.imageUrl,
@@ -101,6 +105,8 @@ export default function Admin() {
       id: editingSpot.id,
       updates: {
         name: editingSpot.name,
+        latitude: editingSpot.latitude,
+        longitude: editingSpot.longitude,
         description: editingSpot.description,
         bestFor: editingSpot.bestFor,
         imageUrl: editingSpot.imageUrl,
@@ -180,6 +186,28 @@ export default function Admin() {
                           placeholder="Navn"
                           className="w-full px-3 py-2 border border-border rounded-lg text-sm"
                         />
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">Breddegrad (lat)</label>
+                            <input
+                              type="text"
+                              value={editingSpot.latitude}
+                              onChange={(e) => setEditingSpot({ ...editingSpot, latitude: e.target.value })}
+                              placeholder="56.1234"
+                              className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-xs text-muted-foreground mb-1 block">Længdegrad (lng)</label>
+                            <input
+                              type="text"
+                              value={editingSpot.longitude}
+                              onChange={(e) => setEditingSpot({ ...editingSpot, longitude: e.target.value })}
+                              placeholder="10.1234"
+                              className="w-full px-3 py-2 border border-border rounded-lg text-sm"
+                            />
+                          </div>
+                        </div>
                         <textarea
                           value={editingSpot.description ?? ""}
                           onChange={(e) => setEditingSpot({ ...editingSpot, description: e.target.value || null })}
