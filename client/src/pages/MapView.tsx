@@ -1940,7 +1940,7 @@ export default function MapView() {
             >
               {spots?.filter(spot => spot.spotType !== "webcam").map((spot) => (
                 <Marker
-                  key={`fish-${spot.id}-${spot.currentWaterTemp}-${spot.windSpeed}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}-${spotForecast?.fetchedAt || 0}`}
+                  key={`fish-${spot.id}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}-${selectedDateTime.getTime()}-${spotForecast?.centerIndex ?? 0}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={selectedSpotId === spot.id
                     ? createExpandedBadge(spot, spotForecast)
