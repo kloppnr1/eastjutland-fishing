@@ -36,6 +36,9 @@ const FORECAST_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 interface ForecastData {
   temps: (number | null)[];
+  airTemps: (number | null)[];
+  windSpeeds: (number | null)[];
+  windDirections: (number | null)[];
   times: string[];
   centerIndex: number; // Index of selected datetime in the array
   fetchedAt: number;
@@ -101,15 +104,29 @@ async function fetchForecastData(lat: number, lng: number, selectedDateTime: Dat
     const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
     const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
-    const res = await fetch(
-      `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}&hourly=sea_surface_temperature&start_date=${startStr}&end_date=${endStr}&timezone=Europe/Copenhagen`
-    );
+    // Fetch both marine (water temp) and weather (air temp, wind) data
+    const [marineRes, weatherRes] = await Promise.all([
+      fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}&hourly=sea_surface_temperature&start_date=${startStr}&end_date=${endStr}&timezone=Europe/Copenhagen`),
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&start_date=${startStr}&end_date=${endStr}&timezone=Europe/Copenhagen`)
+    ]);
 
-    if (!res.ok) return null;
+    if (!marineRes.ok) return null;
 
-    const data = await res.json();
-    const times: string[] = data.hourly?.time || [];
-    const temps: (number | null)[] = data.hourly?.sea_surface_temperature || [];
+    const marineData = await marineRes.json();
+    const times: string[] = marineData.hourly?.time || [];
+    const temps: (number | null)[] = marineData.hourly?.sea_surface_temperature || [];
+
+    // Parse weather data
+    let airTemps: (number | null)[] = [];
+    let windSpeeds: (number | null)[] = [];
+    let windDirections: (number | null)[] = [];
+
+    if (weatherRes.ok) {
+      const weatherData = await weatherRes.json();
+      airTemps = weatherData.hourly?.temperature_2m || [];
+      windSpeeds = weatherData.hourly?.wind_speed_10m || [];
+      windDirections = weatherData.hourly?.wind_direction_10m || [];
+    }
 
     // Find the index closest to selected datetime
     const selectedHour = selectedDateTime.getHours();
@@ -123,6 +140,9 @@ async function fetchForecastData(lat: number, lng: number, selectedDateTime: Dat
 
     return {
       temps,
+      airTemps,
+      windSpeeds,
+      windDirections,
       times,
       centerIndex,
       fetchedAt: Date.now()
@@ -570,10 +590,20 @@ const createExpandedBadge = (
   },
   forecast: ForecastData | null
 ) => {
-  const waterTemp = spot.currentWaterTemp;
-  const airTemp = spot.currentAirTemp;
-  const windSpeed = spot.windSpeed;
-  const windDir = spot.windDirection;
+  // Use forecast values at selected time if available, otherwise fall back to current values
+  const idx = forecast?.centerIndex ?? -1;
+  const waterTemp = (forecast && idx >= 0 && forecast.temps[idx] != null)
+    ? forecast.temps[idx]
+    : spot.currentWaterTemp;
+  const airTemp = (forecast && idx >= 0 && forecast.airTemps[idx] != null)
+    ? forecast.airTemps[idx]
+    : spot.currentAirTemp;
+  const windSpeed = (forecast && idx >= 0 && forecast.windSpeeds[idx] != null)
+    ? forecast.windSpeeds[idx]
+    : spot.windSpeed;
+  const windDir = (forecast && idx >= 0 && forecast.windDirections[idx] != null)
+    ? forecast.windDirections[idx]
+    : spot.windDirection;
   const lat = Number(spot.latitude);
   const lng = Number(spot.longitude);
 
