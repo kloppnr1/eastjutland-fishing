@@ -562,18 +562,19 @@ const createExpandedBadge = (
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const mapData = getStaticMapData(lat, lng);
 
-  // Calculate object-position to center the spot in the visible area
-  // Container is ~200x80, image is 256x256
-  // We want the spot (at pixelX, pixelY in the image) to appear at center of container
+  // Calculate position to center the spot in the visible area
+  // Container is fixed 200x80, image is 256x256
+  // We position the image absolutely so the spot appears at container center
   const containerWidth = 200;
   const containerHeight = 80;
-  // Offset = where in image - where we want it in container
-  // Negative offset shifts image left/up, positive shifts right/down
-  const offsetX = containerWidth / 2 - mapData.pixelX;
-  const offsetY = containerHeight / 2 - mapData.pixelY;
-  // Clamp so we don't show outside the tile
-  const clampedOffsetX = Math.max(containerWidth - 256, Math.min(0, offsetX));
-  const clampedOffsetY = Math.max(containerHeight - 256, Math.min(0, offsetY));
+  // Position image so spot (pixelX, pixelY) appears at container center (100, 40)
+  const imageLeft = containerWidth / 2 - mapData.pixelX;
+  const imageTop = containerHeight / 2 - mapData.pixelY;
+  // Clamp so image fills the container (no empty space)
+  // Left can range from -(imageWidth - containerWidth) to 0, i.e., -56 to 0
+  // Top can range from -(imageHeight - containerHeight) to 0, i.e., -176 to 0
+  const clampedLeft = Math.max(-(256 - containerWidth), Math.min(0, imageLeft));
+  const clampedTop = Math.max(-(256 - containerHeight), Math.min(0, imageTop));
 
   // Generate sparkline
   const sparkline = generateBadgeSparkline(forecast, 180, 40);
@@ -638,13 +639,14 @@ const createExpandedBadge = (
 
           <!-- Map tile (centered on spot location) -->
           <div style="
-            width: 100%;
-            height: 80px;
+            position: relative;
+            width: ${containerWidth}px;
+            height: ${containerHeight}px;
             border-radius: 8px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin: 0 auto 10px auto;
           ">
-            <img src="${mapData.url}" alt="Kort" style="width: 256px; height: 256px; object-fit: none; object-position: ${clampedOffsetX}px ${clampedOffsetY}px;" />
+            <img src="${mapData.url}" alt="Kort" style="position: absolute; left: ${clampedLeft}px; top: ${clampedTop}px; width: 256px; height: 256px;" />
           </div>
 
           <!-- Stats row -->
