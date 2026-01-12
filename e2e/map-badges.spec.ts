@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Map Badge Click Detection', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the map page and wait for full load
-    await page.goto('./map', { waitUntil: 'networkidle' });
-    // Wait for map to load (may show loading spinner first)
-    await page.waitForSelector('.leaflet-container', { timeout: 60000 });
+    // Navigate to the map page
+    await page.goto('./map');
+    // Wait for map to load
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     // Wait for markers to appear
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
   });
 
   test('clicking on badge expands it', async ({ page }) => {
@@ -194,10 +194,9 @@ test.describe('Map Badge Click Detection', () => {
 
 test.describe('Expanded Badge', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the map page and wait for full load
-    await page.goto('./map', { waitUntil: 'networkidle' });
-    await page.waitForSelector('.leaflet-container', { timeout: 60000 });
-    await page.waitForTimeout(3000);
+    await page.goto('./map');
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
+    await page.waitForTimeout(2000);
   });
 
   test('expanded badge shows spot details', async ({ page }) => {
@@ -270,9 +269,8 @@ test.describe('Expanded Badge', () => {
 
 test.describe('Cluster Stacked Badges', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the map page and wait for full load
-    await page.goto('./map', { waitUntil: 'networkidle' });
-    await page.waitForSelector('.leaflet-container', { timeout: 60000 });
+    await page.goto('./map');
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
     // Zoom out to trigger clustering
     const map = page.locator('.leaflet-container');
     // Use mouse wheel to zoom out more
@@ -646,10 +644,9 @@ test.describe('Cluster Stacked Badges', () => {
 
 test.describe('DateTime Picker', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the map page and wait for full load
-    await page.goto('./map', { waitUntil: 'networkidle' });
-    await page.waitForSelector('.leaflet-container', { timeout: 60000 });
-    await page.waitForTimeout(2000);
+    await page.goto('./map');
+    await page.waitForSelector('.leaflet-container', { timeout: 30000 });
+    await page.waitForTimeout(1000);
   });
 
   test('datetime picker is visible on the map', async ({ page }) => {

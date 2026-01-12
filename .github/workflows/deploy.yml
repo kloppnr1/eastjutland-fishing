@@ -97,7 +97,7 @@ jobs:
         run: npx playwright test --project=chromium
         env:
           CI: true
-          PLAYWRIGHT_BASE_URL: https://kloppnr1.github.io/eastjutland-fishing
+          PLAYWRIGHT_BASE_URL: https://kloppnr1.github.io/eastjutland-fishing/
 
       - name: Upload test results
         if: always()
