@@ -30,6 +30,178 @@ import { AddSpotModal } from "@/components/AddSpotModal";
 import { resolveImageUrl } from "@/lib/image-url";
 import "leaflet/dist/leaflet.css";
 
+// Forecast cache for sparklines
+const FORECAST_CACHE_KEY = "ostjylland-forecast-cache-v1";
+const FORECAST_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+interface ForecastData {
+  temps: (number | null)[];
+  times: string[];
+  centerIndex: number; // Index of selected datetime in the array
+  fetchedAt: number;
+}
+
+interface ForecastCache {
+  [key: string]: ForecastData;
+}
+
+function loadForecastCache(): ForecastCache {
+  try {
+    const stored = localStorage.getItem(FORECAST_CACHE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (err) {
+    console.error("Failed to load forecast cache:", err);
+  }
+  return {};
+}
+
+function saveForecastCache(cache: ForecastCache) {
+  try {
+    localStorage.setItem(FORECAST_CACHE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    console.error("Failed to save forecast cache:", err);
+  }
+}
+
+// Get forecast cache key (tile + date)
+function getForecastCacheKey(lat: number, lng: number, date: Date): string {
+  const tileLat = Math.floor(lat * 10) / 10;
+  const tileLng = Math.floor(lng * 10) / 10;
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${tileLat}_${tileLng}_${dateStr}`;
+}
+
+// Fetch forecast data centered on selected datetime
+// Open-Meteo limits: ~5 days past, ~16 days future from NOW
+async function fetchForecastData(lat: number, lng: number, selectedDateTime: Date): Promise<ForecastData | null> {
+  try {
+    const now = new Date();
+    const selectedDate = new Date(selectedDateTime);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    // Calculate date range: try ±3 days from selected date
+    const msPerDay = 24 * 60 * 60 * 1000;
+    let startDate = new Date(selectedDate.getTime() - 3 * msPerDay);
+    let endDate = new Date(selectedDate.getTime() + 3 * msPerDay);
+
+    // Clamp to Open-Meteo limits (5 days past, 16 days future from now)
+    const nowDate = new Date(now);
+    nowDate.setHours(0, 0, 0, 0);
+    const minDate = new Date(nowDate.getTime() - 5 * msPerDay);
+    const maxDate = new Date(nowDate.getTime() + 16 * msPerDay);
+
+    if (startDate < minDate) startDate = minDate;
+    if (endDate > maxDate) endDate = maxDate;
+
+    // If selected date is completely outside range, return null
+    if (selectedDate < minDate || selectedDate > maxDate) {
+      return null;
+    }
+
+    const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+    const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+    const res = await fetch(
+      `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}&hourly=sea_surface_temperature&start_date=${startStr}&end_date=${endStr}&timezone=Europe/Copenhagen`
+    );
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const times: string[] = data.hourly?.time || [];
+    const temps: (number | null)[] = data.hourly?.sea_surface_temperature || [];
+
+    // Find the index closest to selected datetime
+    const selectedHour = selectedDateTime.getHours();
+    const selectedDateStr = `${selectedDateTime.getFullYear()}-${String(selectedDateTime.getMonth() + 1).padStart(2, '0')}-${String(selectedDateTime.getDate()).padStart(2, '0')}T${String(selectedHour).padStart(2, '0')}`;
+
+    let centerIndex = times.findIndex(t => t.startsWith(selectedDateStr));
+    if (centerIndex === -1) {
+      // Find closest time
+      centerIndex = Math.floor(times.length / 2);
+    }
+
+    return {
+      temps,
+      times,
+      centerIndex,
+      fetchedAt: Date.now()
+    };
+  } catch (err) {
+    console.error("Failed to fetch forecast:", err);
+    return null;
+  }
+}
+
+// Generate sparkline SVG path for expanded badge
+function generateBadgeSparkline(forecast: ForecastData | null, width: number, height: number): { svg: string; startLabel: string; endLabel: string; centerLabel: string } {
+  if (!forecast || forecast.temps.length === 0) {
+    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
+  }
+
+  const { temps, times, centerIndex } = forecast;
+  const validTemps = temps.filter((t): t is number => t !== null);
+  if (validTemps.length < 2) {
+    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
+  }
+
+  const min = Math.min(...validTemps);
+  const max = Math.max(...validTemps);
+  const range = Math.max(max - min, 2); // Minimum range of 2 degrees
+  const padding = (range - (max - min)) / 2;
+  const adjustedMin = min - padding;
+
+  // Build path
+  const points: { x: number; y: number }[] = [];
+  temps.forEach((temp, i) => {
+    if (temp === null) return;
+    const x = (i / (temps.length - 1)) * width;
+    const y = height - ((temp - adjustedMin) / range) * height;
+    points.push({ x, y });
+  });
+
+  if (points.length < 2) {
+    return { svg: '', startLabel: '', endLabel: '', centerLabel: '' };
+  }
+
+  const path = `M${points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')}`;
+  const centerX = (centerIndex / (temps.length - 1)) * width;
+
+  // Labels
+  const startTime = times[0] || '';
+  const endTime = times[times.length - 1] || '';
+  const parseDate = (t: string) => {
+    const m = t.match(/(\d+)-(\d+)-(\d+)/);
+    return m ? `${parseInt(m[3])}/${parseInt(m[2])}` : '';
+  };
+
+  const startTemp = validTemps[0];
+  const endTemp = validTemps[validTemps.length - 1];
+  const centerTemp = temps[centerIndex];
+
+  const svg = `
+    <svg width="${width}" height="${height + 25}" style="overflow: visible;">
+      <defs>
+        <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="${path} L${width},${height} L0,${height} Z" fill="url(#sparkGrad)"/>
+      <path d="${path}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="${centerX}" y1="0" x2="${centerX}" y2="${height}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <circle cx="${centerX}" cy="${height - ((centerTemp !== null ? centerTemp : min) - adjustedMin) / range * height}" r="4" fill="#ef4444"/>
+    </svg>
+  `;
+
+  return {
+    svg,
+    startLabel: `${parseDate(startTime)} ${startTemp?.toFixed(1) || '--'}°`,
+    endLabel: `${parseDate(endTime)} ${endTemp?.toFixed(1) || '--'}°`,
+    centerLabel: `${centerTemp?.toFixed(1) || '--'}°`
+  };
+}
+
 // Create cluster icon showing count and stats - stacked badge style
 const createClusterIconFactory = (spots: any[] | undefined, scale: number = 1) => (cluster: any) => {
   const markers = cluster.getAllChildMarkers();
@@ -317,7 +489,7 @@ const getStaticMapUrl = (lat: number, lng: number) => {
   return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 };
 
-// Expanded badge when spot is selected - shows full info
+// Expanded badge when spot is selected - shows full info with forecast sparkline
 const createExpandedBadge = (
   spot: {
     name: string;
@@ -329,7 +501,7 @@ const createExpandedBadge = (
     windSpeed: number | null;
     windDirection: number | null;
   },
-  resolveImageUrlFn: (url: string) => string | null
+  forecast: ForecastData | null
 ) => {
   const waterTemp = spot.currentWaterTemp;
   const airTemp = spot.currentAirTemp;
@@ -340,6 +512,9 @@ const createExpandedBadge = (
 
   const waterColor = waterTemp === null ? "#6b7280" : waterTemp < 5 ? "#3b82f6" : waterTemp < 12 ? "#14b8a6" : "#f97316";
   const mapTileUrl = getStaticMapUrl(lat, lng);
+
+  // Generate sparkline
+  const sparkline = generateBadgeSparkline(forecast, 180, 40);
 
   return divIcon({
     className: "expanded-badge-marker",
@@ -415,6 +590,7 @@ const createExpandedBadge = (
             display: flex;
             gap: 8px;
             justify-content: center;
+            margin-bottom: ${sparkline.svg ? '10px' : '0'};
           ">
             <!-- Water temp -->
             <div style="
@@ -463,6 +639,19 @@ const createExpandedBadge = (
               <div style="font-size: 10px; color: #6b7280;">m/s</div>
             </div>
           </div>
+
+          ${sparkline.svg ? `
+          <!-- Forecast sparkline -->
+          <div style="margin-bottom: 6px;">
+            <div style="font-size: 10px; color: #6b7280; margin-bottom: 4px; text-align: center;">Vandtemperatur</div>
+            ${sparkline.svg}
+            <div style="display: flex; justify-content: space-between; font-size: 9px; color: #6b7280; margin-top: 2px;">
+              <span>${sparkline.startLabel}</span>
+              <span style="color: #ef4444; font-weight: 600;">${sparkline.centerLabel}</span>
+              <span>${sparkline.endLabel}</span>
+            </div>
+          </div>
+          ` : ''}
 
           <!-- Tap hint -->
           <div style="
@@ -1370,7 +1559,43 @@ export default function MapView() {
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(10);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
+  const [spotForecast, setSpotForecast] = useState<ForecastData | null>(null);
   const searchString = useSearch();
+
+  // Fetch forecast when spot is selected or datetime changes
+  useEffect(() => {
+    if (!selectedSpotId || !spots) {
+      setSpotForecast(null);
+      return;
+    }
+
+    const spot = spots.find(s => s.id === selectedSpotId);
+    if (!spot) {
+      setSpotForecast(null);
+      return;
+    }
+
+    const lat = Number(spot.latitude);
+    const lng = Number(spot.longitude);
+    const cacheKey = getForecastCacheKey(lat, lng, selectedDateTime);
+
+    // Check cache first
+    const cache = loadForecastCache();
+    const cached = cache[cacheKey];
+    if (cached && (Date.now() - cached.fetchedAt) < FORECAST_CACHE_DURATION) {
+      setSpotForecast(cached);
+      return;
+    }
+
+    // Fetch fresh data
+    fetchForecastData(lat, lng, selectedDateTime).then(data => {
+      if (data) {
+        const newCache = { ...loadForecastCache(), [cacheKey]: data };
+        saveForecastCache(newCache);
+        setSpotForecast(data);
+      }
+    });
+  }, [selectedSpotId, selectedDateTime, spots]);
 
   // Reset datetime to current time
   const handleResetDateTime = useCallback(() => {
@@ -1517,10 +1742,10 @@ export default function MapView() {
             >
               {spots?.filter(spot => spot.spotType !== "webcam").map((spot) => (
                 <Marker
-                  key={`fish-${spot.id}-${spot.currentWaterTemp}-${spot.windSpeed}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}`}
+                  key={`fish-${spot.id}-${spot.currentWaterTemp}-${spot.windSpeed}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}-${spotForecast?.fetchedAt || 0}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={selectedSpotId === spot.id
-                    ? createExpandedBadge(spot, resolveImageUrl)
+                    ? createExpandedBadge(spot, spotForecast)
                     : createSpotIcon(
                         spot.currentWaterTemp,
                         spot.windSpeed,
