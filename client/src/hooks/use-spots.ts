@@ -7,6 +7,7 @@ const STATIC_MODE = import.meta.env.VITE_STATIC_MODE === "true";
 
 // GET /api/spots
 export function useSpots(selectedDateTime?: Date) {
+  // Always use staticData for dynamic weather based on selectedDateTime
   const staticData = useStaticSpots(selectedDateTime);
 
   const serverQuery = useQuery({
@@ -19,20 +20,18 @@ export function useSpots(selectedDateTime?: Date) {
     enabled: !STATIC_MODE,
   });
 
-  if (STATIC_MODE) {
-    return {
-      data: staticData.spots,
-      isLoading: staticData.isLoading,
-      error: staticData.error,
-      // Expose static-specific methods
-      addSpot: staticData.addSpot,
-      deleteSpot: staticData.deleteSpot,
-      refetch: staticData.refetch,
-      selectedDateTime: staticData.selectedDateTime,
-    };
-  }
-
-  return serverQuery;
+  // Always return staticData.spots since it has dynamic weather for selectedDateTime
+  // The staticData already includes bundled spots and fetches weather based on datetime
+  return {
+    data: staticData.spots,
+    isLoading: staticData.isLoading || (!STATIC_MODE && serverQuery.isLoading),
+    error: staticData.error || (!STATIC_MODE ? serverQuery.error : null),
+    // Expose static-specific methods
+    addSpot: staticData.addSpot,
+    deleteSpot: staticData.deleteSpot,
+    refetch: staticData.refetch,
+    selectedDateTime: staticData.selectedDateTime,
+  };
 }
 
 // GET /api/spots/:id

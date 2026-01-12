@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "re
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
-import { Loader2, Navigation, Video, LocateFixed, Calendar, Clock, RotateCcw } from "lucide-react";
+import { Loader2, Navigation, Video, LocateFixed, Calendar, RotateCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 // Auto-refreshing webcam image component
@@ -590,20 +590,12 @@ const createExpandedBadge = (
   },
   forecast: ForecastData | null
 ) => {
-  // Use forecast values at selected time if available, otherwise fall back to current values
-  const idx = forecast?.centerIndex ?? -1;
-  const waterTemp = (forecast && idx >= 0 && forecast.temps?.[idx] != null)
-    ? forecast.temps[idx]
-    : spot.currentWaterTemp;
-  const airTemp = (forecast && idx >= 0 && forecast.airTemps?.[idx] != null)
-    ? forecast.airTemps[idx]
-    : spot.currentAirTemp;
-  const windSpeed = (forecast && idx >= 0 && forecast.windSpeeds?.[idx] != null)
-    ? forecast.windSpeeds[idx]
-    : spot.windSpeed;
-  const windDir = (forecast && idx >= 0 && forecast.windDirections?.[idx] != null)
-    ? forecast.windDirections[idx]
-    : spot.windDirection;
+  // Use spot values (same as collapsed badges, updated by tile-based weather)
+  // Forecast is only used for sparkline graph visualization
+  const waterTemp = spot.currentWaterTemp;
+  const airTemp = spot.currentAirTemp;
+  const windSpeed = spot.windSpeed;
+  const windDir = spot.windDirection;
   const lat = Number(spot.latitude);
   const lng = Number(spot.longitude);
 
@@ -1536,14 +1528,6 @@ function DateTimePicker({
   // The datetime to display in the picker (pending if editing, otherwise selected)
   const displayedDateTime = pendingDateTime ?? selectedDateTime;
 
-  // Format date for input (YYYY-MM-DD)
-  const dateValue = useMemo(() => {
-    const year = displayedDateTime.getFullYear();
-    const month = String(displayedDateTime.getMonth() + 1).padStart(2, '0');
-    const day = String(displayedDateTime.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }, [displayedDateTime]);
-
   // Format time for display (HH:00)
   const timeValue = useMemo(() => {
     return String(displayedDateTime.getHours()).padStart(2, '0');
@@ -1586,15 +1570,6 @@ function DateTimePicker({
     setIsOpen(true);
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const [year, month, day] = e.target.value.split('-').map(Number);
-    const newDate = new Date(displayedDateTime);
-    newDate.setFullYear(year, month - 1, day);
-    // Default to 12:00 when selecting a new date
-    newDate.setHours(12, 0, 0, 0);
-    setPendingDateTime(newDate);
-  };
-
   const handleHourChange = (hour: number) => {
     const newDate = new Date(displayedDateTime);
     newDate.setHours(hour, 0, 0, 0);
@@ -1623,31 +1598,156 @@ function DateTimePicker({
   // Generate hour options
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
+  // Refs for auto-scrolling
+  const dayScrollRef = useRef<HTMLDivElement>(null);
+  const hourScrollRef = useRef<HTMLDivElement>(null);
+
+  // Generate days: 7 days back + today + 7 days forward = 15 days
+  const days = useMemo(() => {
+    const dayNames = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+    const result = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = -7; i <= 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      result.push({
+        date,
+        dayName: dayNames[date.getDay()],
+        dayNum: date.getDate(),
+        month: date.getMonth() + 1,
+        isToday: i === 0,
+        index: i + 7, // 0-14, with today at index 7
+      });
+    }
+    return result;
+  }, []);
+
+  // Check if displayed date matches a day in the grid
+  const selectedDayIndex = useMemo(() => {
+    return days.findIndex(d =>
+      d.date.getFullYear() === displayedDateTime.getFullYear() &&
+      d.date.getMonth() === displayedDateTime.getMonth() &&
+      d.date.getDate() === displayedDateTime.getDate()
+    );
+  }, [days, displayedDateTime]);
+
+  const handleDaySelect = (dayDate: Date) => {
+    const newDate = new Date(displayedDateTime);
+    newDate.setFullYear(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+    setPendingDateTime(newDate);
+  };
+
+  // Auto-scroll to selected items when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Scroll day picker to selected day
+      setTimeout(() => {
+        if (dayScrollRef.current && selectedDayIndex >= 0) {
+          const dayButton = dayScrollRef.current.children[selectedDayIndex] as HTMLElement;
+          if (dayButton) {
+            dayButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }
+        // Scroll hour picker to selected hour
+        if (hourScrollRef.current) {
+          const selectedHour = parseInt(timeValue);
+          const hourButton = hourScrollRef.current.children[selectedHour] as HTMLElement;
+          if (hourButton) {
+            hourButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }
+      }, 50);
+    }
+  }, [isOpen, selectedDayIndex, timeValue]);
+
+  // Setup mouse drag-to-scroll for day and hour pickers
+  useEffect(() => {
+    const dayEl = dayScrollRef.current;
+    const hourEl = hourScrollRef.current;
+
+    if (!isOpen) return;
+
+    const setupDrag = (el: HTMLDivElement | null) => {
+      if (!el) return () => {};
+
+      let isDown = false;
+      let startX: number;
+      let scrollLeft: number;
+
+      const onMouseDown = (e: MouseEvent) => {
+        isDown = true;
+        el.style.cursor = 'grabbing';
+        startX = e.pageX - el.offsetLeft;
+        scrollLeft = el.scrollLeft;
+      };
+
+      const onMouseLeave = () => {
+        isDown = false;
+        el.style.cursor = 'grab';
+      };
+
+      const onMouseUp = () => {
+        isDown = false;
+        el.style.cursor = 'grab';
+      };
+
+      const onMouseMove = (e: MouseEvent) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        el.scrollLeft = scrollLeft - walk;
+      };
+
+      el.style.cursor = 'grab';
+      el.addEventListener('mousedown', onMouseDown);
+      el.addEventListener('mouseleave', onMouseLeave);
+      el.addEventListener('mouseup', onMouseUp);
+      el.addEventListener('mousemove', onMouseMove);
+
+      return () => {
+        el.removeEventListener('mousedown', onMouseDown);
+        el.removeEventListener('mouseleave', onMouseLeave);
+        el.removeEventListener('mouseup', onMouseUp);
+        el.removeEventListener('mousemove', onMouseMove);
+      };
+    };
+
+    const cleanupDay = setupDrag(dayEl);
+    const cleanupHour = setupDrag(hourEl);
+
+    return () => {
+      cleanupDay();
+      cleanupHour();
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Trigger button */}
       <div className="absolute top-2 left-2 sm:top-6 sm:left-6 z-[1000]" data-testid="datetime-picker">
-        <button
-          onClick={handleOpen}
-          className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-lg hover:bg-gray-50 transition-colors"
-          data-testid="datetime-toggle"
-        >
-          <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-          <span className="font-medium text-sm" data-testid="datetime-display">{displayText}</span>
+        <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg">
+          <button
+            onClick={handleOpen}
+            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded-xl transition-colors"
+            data-testid="datetime-toggle"
+          >
+            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="font-medium text-sm" data-testid="datetime-display">{displayText}</span>
+          </button>
           {!isCurrentHour && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onReset();
-              }}
-              className="ml-1 p-1 hover:bg-gray-200 rounded-full flex-shrink-0"
+              onClick={onReset}
+              className="p-2 hover:bg-gray-100 rounded-r-xl transition-colors border-l border-gray-100"
               title="Nulstil"
               data-testid="datetime-reset"
             >
               <RotateCcw className="w-4 h-4 text-gray-500" />
             </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Full-screen modal */}
@@ -1658,58 +1758,81 @@ function DateTimePicker({
           onClick={handleCancel}
         >
           <div
-            className="bg-white w-full sm:w-auto sm:min-w-[360px] sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white w-full sm:w-auto sm:min-w-[320px] sm:max-w-sm sm:rounded-xl rounded-t-xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-primary text-white p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold">Vælg tidspunkt</h2>
+            <div className="bg-primary text-white px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm opacity-80">Tidspunkt</span>
+                  <div className="text-lg font-bold">{pendingDisplayText || "Nu"}</div>
+                </div>
                 <button
                   onClick={handleCancel}
                   className="p-1 hover:bg-white/20 rounded-full transition-colors"
                   data-testid="datetime-close"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="text-2xl font-bold">
-                {pendingDisplayText || "Nu"}
-              </div>
             </div>
 
             {/* Content */}
-            <div className="p-4 sm:p-5 flex-1 overflow-y-auto">
-              {/* Date picker */}
-              <div className="mb-5">
-                <label className="text-sm font-medium text-gray-700 block mb-2">Dato</label>
-                <input
-                  type="date"
-                  value={dateValue}
-                  onChange={handleDateChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  data-testid="datetime-date-input"
-                />
+            <div className="p-3 flex-1 overflow-y-auto">
+              {/* Day picker - horizontal scroll */}
+              <div className="mb-3">
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Dato</label>
+                <div
+                  ref={dayScrollRef}
+                  className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+                  data-testid="datetime-day-grid"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  {days.map((day, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleDaySelect(day.date)}
+                      className={`py-1.5 px-2 text-center rounded-lg transition-colors flex flex-col items-center flex-shrink-0 min-w-[44px] ${
+                        selectedDayIndex === index
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                      data-testid={`datetime-day-${index}`}
+                    >
+                      <span className="text-[10px] font-medium">{day.dayName}</span>
+                      <span className="text-sm font-bold">{day.dayNum}/{day.month}</span>
+                      {day.isToday && (
+                        <span className={`text-[9px] ${selectedDayIndex === index ? 'text-white/80' : 'text-primary'}`}>i dag</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Hour picker - large touch targets */}
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-700 block mb-2">Klokkeslæt</label>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2" data-testid="datetime-hour-grid">
+              {/* Hour picker - horizontal scroll */}
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1.5">Klokkeslæt</label>
+                <div
+                  ref={hourScrollRef}
+                  className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide"
+                  data-testid="datetime-hour-grid"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
                   {hours.map(hour => (
                     <button
                       key={hour}
                       onClick={() => handleHourChange(hour)}
-                      className={`py-3 px-2 text-base font-semibold rounded-xl transition-colors ${
+                      className={`py-2 px-3 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
                         parseInt(timeValue) === hour
-                          ? 'bg-primary text-white shadow-md'
+                          ? 'bg-primary text-white shadow-sm'
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
                       data-testid={`datetime-hour-${hour}`}
                     >
-                      {String(hour).padStart(2, '0')}
+                      {String(hour).padStart(2, '0')}:00
                     </button>
                   ))}
                 </div>
@@ -1717,21 +1840,21 @@ function DateTimePicker({
             </div>
 
             {/* Footer buttons */}
-            <div className="p-4 sm:p-5 border-t border-gray-100 space-y-2">
+            <div className="px-3 py-2 border-t border-gray-100 flex gap-2">
+              <button
+                onClick={handleReset}
+                className="flex-1 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 font-medium"
+                data-testid="datetime-reset-full"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Nu
+              </button>
               <button
                 onClick={handleConfirm}
-                className="w-full py-3 text-base text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors font-semibold"
+                className="flex-1 py-2 text-sm text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors font-semibold"
                 data-testid="datetime-ok"
               >
                 OK
-              </button>
-              <button
-                onClick={handleReset}
-                className="w-full py-3 text-base text-primary hover:bg-primary/10 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
-                data-testid="datetime-reset-full"
-              >
-                <RotateCcw className="w-5 h-5" />
-                Nulstil til nu
               </button>
             </div>
           </div>
@@ -1748,19 +1871,19 @@ export default function MapView() {
   const [tempBadgeCoords, setTempBadgeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState(10);
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
-  const [spotForecast, setSpotForecast] = useState<ForecastData | null>(null);
+  const [rawForecastData, setRawForecastData] = useState<ForecastData | null>(null);
   const searchString = useSearch();
 
-  // Fetch forecast when spot is selected or datetime changes
+  // Fetch forecast data when spot is selected (raw data, centerIndex calculated later)
   useEffect(() => {
     if (!selectedSpotId || !spots) {
-      setSpotForecast(null);
+      setRawForecastData(null);
       return;
     }
 
     const spot = spots.find(s => s.id === selectedSpotId);
     if (!spot) {
-      setSpotForecast(null);
+      setRawForecastData(null);
       return;
     }
 
@@ -1772,7 +1895,7 @@ export default function MapView() {
     const cache = loadForecastCache();
     const cached = cache[cacheKey];
     if (cached && (Date.now() - cached.fetchedAt) < FORECAST_CACHE_DURATION) {
-      setSpotForecast(cached);
+      setRawForecastData(cached);
       return;
     }
 
@@ -1781,10 +1904,24 @@ export default function MapView() {
       if (data) {
         const newCache = { ...loadForecastCache(), [cacheKey]: data };
         saveForecastCache(newCache);
-        setSpotForecast(data);
+        setRawForecastData(data);
       }
     });
   }, [selectedSpotId, selectedDateTime, spots]);
+
+  // Compute centerIndex synchronously based on current selectedDateTime
+  const spotForecast = useMemo(() => {
+    if (!rawForecastData) return null;
+
+    const selectedHour = selectedDateTime.getHours();
+    const selectedDateStr = `${selectedDateTime.getFullYear()}-${String(selectedDateTime.getMonth() + 1).padStart(2, '0')}-${String(selectedDateTime.getDate()).padStart(2, '0')}T${String(selectedHour).padStart(2, '0')}`;
+    let centerIndex = rawForecastData.times.findIndex(t => t.startsWith(selectedDateStr));
+    if (centerIndex === -1) {
+      centerIndex = Math.floor(rawForecastData.times.length / 2);
+    }
+
+    return { ...rawForecastData, centerIndex };
+  }, [rawForecastData, selectedDateTime]);
 
   // Reset datetime to current time
   const handleResetDateTime = useCallback(() => {
@@ -1940,7 +2077,7 @@ export default function MapView() {
             >
               {spots?.filter(spot => spot.spotType !== "webcam").map((spot) => (
                 <Marker
-                  key={`fish-${spot.id}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}-${selectedDateTime.getTime()}-${spotForecast?.centerIndex ?? 0}`}
+                  key={`fish-${spot.id}-${currentZoom}-${selectedSpotId === spot.id ? 'expanded' : 'normal'}-${spot.currentWaterTemp}-${spot.currentAirTemp}-${spot.windSpeed}`}
                   position={[Number(spot.latitude), Number(spot.longitude)]}
                   icon={selectedSpotId === spot.id
                     ? createExpandedBadge(spot, spotForecast)
