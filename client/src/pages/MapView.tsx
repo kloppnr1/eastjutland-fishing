@@ -215,11 +215,11 @@ function generateBadgeSparkline(forecast: ForecastData | null, width: number, he
       </defs>
       ${pastPath ? `
         <path d="${pastPath} L${centerX.toFixed(1)},${height} L0,${height} Z" fill="url(#sparkGradPast${gradId})"/>
-        <path d="${pastPath}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="${pastPath}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       ` : ''}
       ${futurePath ? `
         <path d="${futurePath} L${width},${height} L${centerX.toFixed(1)},${height} Z" fill="url(#sparkGradFuture${gradId})"/>
-        <path d="${futurePath}" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>
+        <path d="${futurePath}" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>
       ` : ''}
       <line x1="${centerX.toFixed(1)}" y1="0" x2="${centerX.toFixed(1)}" y2="${height}" stroke="#ef4444" stroke-width="1.5"/>
     </svg>
@@ -591,8 +591,8 @@ const createExpandedBadge = (
   const clampedLeft = Math.max(-(mapData.gridSize - containerWidth), Math.min(0, gridLeft));
   const clampedTop = Math.max(-(mapData.gridSize - containerHeight), Math.min(0, gridTop));
 
-  // Generate sparkline
-  const sparkline = generateBadgeSparkline(forecast, 180, 40);
+  // Generate sparkline (same size as TempBadge)
+  const sparkline = generateBadgeSparkline(forecast, 200, 50);
 
   return divIcon({
     className: "expanded-badge-marker",
@@ -726,19 +726,19 @@ const createExpandedBadge = (
           <!-- Forecast sparkline (same style as TempBadge) -->
           <div style="margin-bottom: 6px;">
             ${sparkline.svg}
-            <!-- Date labels underneath -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; margin-top: 4px;">
-              <div style="display: flex; flex-direction: column; align-items: flex-start; background: #f0f9ff; padding: 3px 6px; border-radius: 4px;">
-                <span style="font-weight: 600; color: #1e40af; font-size: 9px;">${sparkline.startDate}</span>
-                <span style="font-size: 11px; font-weight: 700; color: #3b82f6;">${sparkline.startTemp}</span>
+            <!-- Date labels underneath (same style as TempBadge) -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; width: 200px; margin-top: 4px;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; background: #f0f9ff; padding: 4px 8px; border-radius: 6px;">
+                <span style="font-weight: 600; color: #1e40af;">${sparkline.startDate}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #3b82f6;">${sparkline.startTemp}</span>
               </div>
-              <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 3px 6px; border-radius: 4px;">
-                <span style="color: #991b1b; font-weight: 600; font-size: 9px;">Valgt</span>
-                <span style="font-size: 11px; font-weight: 700; color: #ef4444;">${sparkline.centerTemp}</span>
+              <div style="display: flex; flex-direction: column; align-items: center; background: #fef2f2; padding: 4px 8px; border-radius: 6px;">
+                <span style="color: #991b1b; font-weight: 600; font-size: 10px;">Valgt</span>
+                <span style="font-size: 12px; font-weight: 700; color: #ef4444;">${sparkline.centerTemp}</span>
               </div>
-              <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 3px 6px; border-radius: 4px;">
-                <span style="font-weight: 600; color: #c2410c; font-size: 9px;">${sparkline.endDate}</span>
-                <span style="font-size: 11px; font-weight: 700; color: #f97316;">${sparkline.endTemp}</span>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff7ed; padding: 4px 8px; border-radius: 6px;">
+                <span style="font-weight: 600; color: #c2410c;">${sparkline.endDate}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #f97316;">${sparkline.endTemp}</span>
               </div>
             </div>
           </div>
