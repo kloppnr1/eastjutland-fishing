@@ -94,7 +94,7 @@ jobs:
 
       - name: Run E2E tests against deployed site
         continue-on-error: true
-        run: npx playwright test --project=chromium
+        run: npx playwright test --project=chromium --reporter=list
         env:
           CI: true
           PLAYWRIGHT_BASE_URL: https://kloppnr1.github.io/eastjutland-fishing/
