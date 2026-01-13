@@ -11,6 +11,8 @@
     "build:ios": "cross-env CAPACITOR_BUILD=true npm run build:static && npx cap sync ios",
     "icons:create": "tsx script/generate-icon.ts",
     "icons:generate": "npm run icons:create && npx @capacitor/assets generate --ios",
+    "splash:create": "tsx generate-splash.ts",
+    "splash:generate": "npm run splash:create && npx @capacitor/assets generate --ios",
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
