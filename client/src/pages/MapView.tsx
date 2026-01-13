@@ -1874,6 +1874,14 @@ export default function MapView() {
   const [rawForecastData, setRawForecastData] = useState<ForecastData | null>(null);
   const searchString = useSearch();
 
+  // Compute a hash of weather data to detect when spots have updated weather
+  const weatherHash = useMemo(() => {
+    if (!spots) return 0;
+    return spots.reduce((hash, spot) => {
+      return hash + (spot.currentWaterTemp || 0) + (spot.windSpeed || 0);
+    }, 0);
+  }, [spots]);
+
   // Fetch forecast data when spot is selected (raw data, centerIndex calculated later)
   useEffect(() => {
     if (!selectedSpotId || !spots) {
@@ -2068,7 +2076,7 @@ export default function MapView() {
 
             {/* Fishing spots (clustered) */}
             <MarkerClusterGroup
-              key={`cluster-${currentZoom}-${selectedDateTime.getTime()}`}
+              key={`cluster-${currentZoom}-${weatherHash}`}
               chunkedLoading
               iconCreateFunction={createClusterIconFactory(spots, badgeScale)}
               maxClusterRadius={60}
