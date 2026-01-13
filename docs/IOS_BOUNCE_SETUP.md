@@ -2,71 +2,62 @@
 
 Enable the native iOS bounce (rubber-band) effect when scrolling.
 
-## Setup
+## Option 1: Plugin (Recommended)
 
-### Step 1: Create the Custom View Controller
+Use the [capacitor-plugin-ios-webview-configurator](https://github.com/niceplugin/capacitor-plugin-ios-webview-configurator) plugin:
+
+```bash
+npm install capacitor-plugin-ios-webview-configurator
+npx cap sync
+```
+
+Then in your app's main entry (e.g., `main.tsx`):
+
+```typescript
+import { Capacitor } from '@capacitor/core';
+
+if (Capacitor.getPlatform() === 'ios') {
+  import('capacitor-plugin-ios-webview-configurator').then(({ setWebviewBounce }) => {
+    setWebviewBounce(true);
+  });
+}
+```
+
+Rebuild with `npm run build:ios` and run.
+
+## Option 2: Objective-C Override
+
+If you prefer not to add a plugin, create an Objective-C file:
 
 1. Open the iOS project:
    ```bash
    npx cap open ios
    ```
 
-2. In Xcode sidebar, right-click **App → App** folder → **New File...**
+2. Right-click **App → App** → **New File...**
 
-3. Choose **Swift File** → Next → Name it `BounceViewController` → Create
+3. Choose **Objective-C File** → Name it `EnableBounce` → Create
 
-4. Click **Don't Create** if asked about bridging header
+4. If asked about bridging header, click **Create Bridging Header**
 
 5. Replace file contents with:
-   ```swift
-   import UIKit
-   import Capacitor
+   ```objc
+   #import <Foundation/Foundation.h>
+   #import <UIKit/UIKit.h>
 
-   class BounceViewController: CAPBridgeViewController {
-       override func viewDidAppear(_ animated: Bool) {
-           super.viewDidAppear(animated)
-           webView?.scrollView.bounces = true
-           webView?.scrollView.alwaysBounceVertical = true
-       }
+   @implementation UIScrollView (EnableBounce)
+   - (void)didMoveToWindow {
+       [super didMoveToWindow];
+       self.bounces = YES;
+       self.alwaysBounceVertical = YES;
    }
+   @end
    ```
 
-### Step 2: Update the Storyboard
+6. Build and run (Cmd+R)
 
-1. In Xcode sidebar, open **App → App → Main.storyboard**
+## Sources
 
-2. Click on the **View Controller** (the main rectangle in the canvas)
-
-3. Open the **Identity Inspector** (right panel, 3rd icon from left, or Cmd+Option+3)
-
-4. Under **Custom Class**, change **Class** from `CAPBridgeViewController` to `BounceViewController`
-
-5. Press Enter to confirm
-
-### Step 3: Build and Run
-
-Press **Cmd+R** to build and run.
-
-## Why This Works
-
-- The storyboard defines which view controller class to use
-- By changing it there, we don't fight with AppDelegate/SceneDelegate initialization
-- `viewDidAppear` is called after the webView is fully ready, so we can safely modify it
-
-## Troubleshooting
-
-**Can't find Main.storyboard**
-- Look in App → App folder in the sidebar
-- Make sure you're in the Project Navigator (Cmd+1)
-
-**Class not showing in dropdown**
-- Make sure BounceViewController.swift compiles without errors
-- Try building first (Cmd+B) then go back to storyboard
-
-**Bounce still not working**
-- Clean build: Product → Clean Build Folder (Shift+Cmd+K)
-- Delete app from device/simulator
-- Rebuild and run
-
-**Changes lost after npm run build:ios**
-- The ios/ folder is preserved by `cap sync`, your changes will persist
+- [Capacitor Discussion #4206](https://github.com/ionic-team/capacitor/discussions/4206)
+- [capacitor-plugin-ios-webview-configurator](https://github.com/cellular/capacitor-plugin-ios-webview-configurator)
+- [Capacitor Issue #2334](https://github.com/ionic-team/capacitor/issues/2334)
