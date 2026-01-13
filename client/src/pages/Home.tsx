@@ -35,11 +35,11 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-5xl md:text-7xl font-display font-bold text-primary mb-6 tracking-tight">
-              Lystfiskeri på <span className="text-accent">Østjylland</span>
+              Lystfiskeri i <span className="text-accent">Østjylland</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
               Find det perfekte sted til havørred, torsk og fladfisk langs den smukke
-              kyst på Østjylland. Vandtemperaturer i realtid for bedre fangster.
+              østjyske kyst. Vandtemperaturer i realtid for bedre fangster.
             </p>
 
             {/* Search Bar */}
