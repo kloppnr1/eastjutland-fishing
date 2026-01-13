@@ -42,6 +42,10 @@
 }
 
 @layer base {
+  html, body {
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-background text-foreground antialiased selection:bg-accent/20 selection:text-accent-foreground;
     font-family: var(--font-sans);
