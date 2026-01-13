@@ -22,7 +22,7 @@ export default function Home() {
   });
 
   return (
-    <div className={`min-h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(3rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
       
       {/* Hero Section */}
