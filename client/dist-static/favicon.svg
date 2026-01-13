@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Fish body - elliptical shape -->
-  <ellipse cx="10" cy="12" rx="7" ry="4"/>
-  <!-- Fish tail -->
-  <path d="M17 12 L21 8 L21 16 Z" fill="none"/>
-  <!-- Fish eye -->
-  <circle cx="6" cy="11" r="1" fill="#1e3a5f"/>
-  <!-- Fish top fin -->
-  <path d="M9 8 Q11 5 13 8"/>
-  <!-- Fish bottom fin -->
-  <path d="M9 16 Q10 18 12 16"/>
-  <!-- Fish gill line -->
-  <path d="M8 10 Q7 12 8 14"/>
+  <!-- Elegant sea trout silhouette -->
+  <!-- Main body - sleek streamlined shape -->
+  <path d="M2 12 C4 9 8 8 12 8 C16 8 19 9 21 12 C19 15 16 16 12 16 C8 16 4 15 2 12"/>
+  <!-- Tail fin - forked -->
+  <path d="M2 12 L0 9 M2 12 L0 15"/>
+  <!-- Dorsal fin -->
+  <path d="M10 8 L12 5 L14 8"/>
+  <!-- Anal fin -->
+  <path d="M14 16 L15 18 L17 16"/>
+  <!-- Pectoral fin -->
+  <path d="M7 12 L5 14"/>
+  <!-- Eye -->
+  <circle cx="17" cy="11.5" r="1" fill="#1e3a5f"/>
+  <!-- Gill mark -->
+  <path d="M15 10 C14 12 15 14 15 14"/>
 </svg>
