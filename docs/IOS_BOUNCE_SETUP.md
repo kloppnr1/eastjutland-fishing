@@ -2,27 +2,7 @@
 
 Enable the native iOS bounce (rubber-band) effect when scrolling.
 
-## Current Setup (Plugin)
-
-This project uses [capacitor-plugin-ios-webview-configurator](https://github.com/cellular/capacitor-plugin-ios-webview-configurator).
-
-Already configured in `client/src/main.tsx`:
-
-```typescript
-if (Capacitor.getPlatform() === "ios") {
-  import("capacitor-plugin-ios-webview-configurator").then(({ setWebviewBounce }) => {
-    setWebviewBounce(true);
-  });
-}
-```
-
-Just rebuild with `npm run build:ios` and run.
-
----
-
-## Alternative: Objective-C Override
-
-If the plugin doesn't work, use this native approach:
+## Setup (Objective-C Override)
 
 1. Open the iOS project:
    ```bash
@@ -51,10 +31,16 @@ If the plugin doesn't work, use this native approach:
 
 6. Build and run (Cmd+R)
 
-This overrides `didMoveToWindow` on ALL UIScrollViews, including WKWebView's internal scroll view.
+## How It Works
+
+This creates an Objective-C category on `UIScrollView` that overrides `didMoveToWindow`. When any scroll view (including WKWebView's internal scroll view) is added to a window, bounce is enabled.
+
+## Notes
+
+- Changes persist across `npm run build:ios` and `npx cap sync`
+- The ios/ folder is not overwritten by Capacitor
 
 ## Sources
 
 - [Capacitor Discussion #4206](https://github.com/ionic-team/capacitor/discussions/4206)
-- [capacitor-plugin-ios-webview-configurator](https://github.com/cellular/capacitor-plugin-ios-webview-configurator)
 - [Capacitor Issue #2334](https://github.com/ionic-team/capacitor/issues/2334)
