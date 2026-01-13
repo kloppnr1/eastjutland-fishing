@@ -300,7 +300,7 @@ export default function SpotDetail() {
     spot?.longitude || ""
   );
   const isNative = useIsNative();
-  const nativeClass = isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.75rem+env(safe-area-inset-bottom))]' : '';
+  const nativeClass = isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : '';
 
   if (isLoading) {
     return (
@@ -333,7 +333,7 @@ export default function SpotDetail() {
   // Simplified webcam view
   if (isWebcam) {
     return (
-      <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.75rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
+      <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
         <Header />
 
         {/* Back button bar */}
@@ -419,7 +419,7 @@ export default function SpotDetail() {
   };
 
   return (
-    <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.75rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
+    <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
       <Header />
 
       {/* Back button bar */}

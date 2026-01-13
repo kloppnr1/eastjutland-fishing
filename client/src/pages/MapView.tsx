@@ -1728,7 +1728,7 @@ function DateTimePicker({
   return (
     <>
       {/* Trigger button */}
-      <div className="absolute top-[calc(0.5rem+env(safe-area-inset-top))] left-2 sm:top-[calc(1.5rem+env(safe-area-inset-top))] sm:left-6 z-[1000]" data-testid="datetime-picker">
+      <div className="absolute top-2 left-2 sm:top-4 sm:left-6 z-[1000]" data-testid="datetime-picker">
         <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg">
           <button
             onClick={handleOpen}
@@ -1972,7 +1972,7 @@ export default function MapView() {
   };
 
   return (
-    <div className={`h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.75rem+env(safe-area-inset-bottom))]' : ''}`}>
+    <div className={`h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
 
       <div className="flex-1 relative" style={{ minHeight: 0 }}>
@@ -2138,7 +2138,7 @@ export default function MapView() {
         />
 
         {/* Spot count - clickable filters */}
-        <div className="absolute top-[calc(0.5rem+env(safe-area-inset-top))] right-2 sm:top-[calc(1.5rem+env(safe-area-inset-top))] sm:right-6 z-[1000]">
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-6 z-[1000]">
           <div className="bg-white rounded-xl shadow-lg px-3 py-2 flex flex-col gap-1 text-sm">
             <button
               onClick={() => setShowFishingSpots(!showFishingSpots)}
