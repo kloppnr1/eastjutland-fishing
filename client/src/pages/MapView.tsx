@@ -1727,7 +1727,7 @@ function DateTimePicker({
   return (
     <>
       {/* Trigger button */}
-      <div className="absolute top-2 left-2 sm:top-6 sm:left-6 z-[1000]" data-testid="datetime-picker">
+      <div className="absolute top-[calc(0.5rem+env(safe-area-inset-top))] left-2 sm:top-[calc(1.5rem+env(safe-area-inset-top))] sm:left-6 z-[1000]" data-testid="datetime-picker">
         <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg">
           <button
             onClick={handleOpen}
@@ -2132,7 +2132,7 @@ export default function MapView() {
         />
 
         {/* Spot count */}
-        <div className="absolute top-6 right-6 z-[1000]">
+        <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] right-6 z-[1000]">
           <div className="bg-white rounded-xl shadow-lg px-4 py-2">
             <span className="font-bold text-primary">{spots?.length || 0}</span>
             <span className="text-muted-foreground ml-1">fiskesteder</span>
