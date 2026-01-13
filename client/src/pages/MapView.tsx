@@ -959,7 +959,7 @@ function LocateButton({ onLocate, onClear }: { onLocate: (lat: number, lng: numb
       onClick={handleLocate}
       onMouseDown={(e) => e.stopPropagation()}
       disabled={locating}
-      className="absolute bottom-6 right-6 z-[1000] bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+      className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-[calc(1.5rem+env(safe-area-inset-right))] z-[1000] bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
       title="Find min placering"
     >
       {locating ? (
