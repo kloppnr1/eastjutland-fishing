@@ -13,7 +13,6 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import proj4 from "proj4";
-import * as GeoTIFF from "geotiff";
 
 // Define ETRS89 / UTM zone 32N (EPSG:25832) projection for Denmark
 proj4.defs("EPSG:25832", "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
@@ -24,86 +23,7 @@ function toUTM(lat: number, lng: number): { easting: number; northing: number } 
   return { easting: Math.round(easting), northing: Math.round(northing) };
 }
 
-// Skråfoto API token (public token from their config.js)
-const SKRAAFOTO_TOKEN = "e88d7be6754140025ebeb63d57e991ae";
-const SKRAAFOTO_API = "https://api.dataforsyningen.dk/rest/skraafoto_api/v2";
-
-// Cache for loaded images (in-memory)
-const imageCache: Record<string, string> = {};
-
-// Fetch Skråfoto image info for a location
-async function fetchSkraafotoImageUrl(lat: number, lng: number, direction: string): Promise<{ url: string; datetime: string } | null> {
-  const intersects = JSON.stringify({ type: "Point", coordinates: [lng, lat] });
-  const apiUrl = `${SKRAAFOTO_API}/search?token=${SKRAAFOTO_TOKEN}&intersects=${encodeURIComponent(intersects)}&direction=${direction}&limit=1&collections=skraafotos2023`;
-
-  try {
-    const res = await fetch(apiUrl);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.features && data.features.length > 0) {
-      const feature = data.features[0];
-      const tifUrl = feature.assets?.data?.href || feature.properties?.["asset:data"];
-      const datetime = feature.properties?.datetime;
-      if (tifUrl) return { url: tifUrl, datetime };
-    }
-  } catch (err) {
-    console.error("Failed to fetch Skråfoto:", err);
-  }
-  return null;
-}
-
-// Load COG overview and convert to data URL
-async function loadCogPreview(tifUrl: string): Promise<string | null> {
-  try {
-    const tiff = await GeoTIFF.fromUrl(tifUrl);
-    // Use overview index 3 for balanced quality/size (~1320x1768 pixels)
-    const imageCount = await tiff.getImageCount();
-    const overviewIndex = Math.min(3, imageCount - 1);
-    const image = await tiff.getImage(overviewIndex);
-
-    const width = image.getWidth();
-    const height = image.getHeight();
-    const samplesPerPixel = image.getSamplesPerPixel();
-
-    console.log(`Loading Skråfoto: ${width}x${height}, ${samplesPerPixel} channels`);
-
-    // Read RGB data - use pool for better performance
-    const rasters = await image.readRasters({
-      interleave: true,
-      pool: new GeoTIFF.Pool()
-    });
-
-    // Create canvas and draw image
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const imageData = ctx.createImageData(width, height);
-    const data = new Uint8Array(rasters as ArrayBuffer);
-
-    // Copy RGB data to RGBA canvas format
-    for (let i = 0; i < width * height; i++) {
-      const srcIdx = i * samplesPerPixel;
-      const dstIdx = i * 4;
-      imageData.data[dstIdx] = data[srcIdx];         // R
-      imageData.data[dstIdx + 1] = data[srcIdx + 1]; // G
-      imageData.data[dstIdx + 2] = data[srcIdx + 2]; // B
-      imageData.data[dstIdx + 3] = 255;              // A
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-
-    // Use PNG for better quality (no compression artifacts)
-    return canvas.toDataURL("image/png");
-  } catch (err) {
-    console.error("Failed to load COG:", err);
-    return null;
-  }
-}
-
-// Skråfoto aerial photo section
+// Skråfoto aerial photo section - uses embedded viewer
 function SkraafotoSection({ lat, lng, name }: { lat: number; lng: number; name: string }) {
   const { easting, northing } = toUTM(lat, lng);
   const baseUrl = `https://skraafoto.dataforsyningen.dk/?center=${easting},${northing}`;
@@ -117,44 +37,6 @@ function SkraafotoSection({ lat, lng, name }: { lat: number; lng: number; name: 
   ];
 
   const [selectedOrientation, setSelectedOrientation] = useState("north");
-  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [photoDate, setPhotoDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // Fetch and load image when orientation changes
-  useEffect(() => {
-    const cacheKey = `${lat}-${lng}-${selectedOrientation}`;
-
-    // Check cache first
-    if (imageCache[cacheKey]) {
-      setImageDataUrl(imageCache[cacheKey]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(false);
-
-    fetchSkraafotoImageUrl(lat, lng, selectedOrientation).then(async (result) => {
-      if (!result) {
-        setError(true);
-        setLoading(false);
-        return;
-      }
-
-      setPhotoDate(result.datetime);
-
-      const dataUrl = await loadCogPreview(result.url);
-      if (dataUrl) {
-        imageCache[cacheKey] = dataUrl;
-        setImageDataUrl(dataUrl);
-      } else {
-        setError(true);
-      }
-      setLoading(false);
-    });
-  }, [lat, lng, selectedOrientation]);
 
   return (
     <motion.div
@@ -196,42 +78,20 @@ function SkraafotoSection({ lat, lng, name }: { lat: number; lng: number; name: 
         ))}
       </div>
 
-      {/* Image display */}
-      <div className="aspect-video rounded-xl overflow-hidden bg-muted relative">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
-            <div className="animate-pulse text-muted-foreground">Indlæser luftfoto...</div>
-          </div>
-        )}
-        {error && !loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <div className="text-muted-foreground text-center">
-              <p>Kunne ikke indlæse billede</p>
-              <a
-                href={`${baseUrl}&orientation=${selectedOrientation}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline text-sm"
-              >
-                Åbn i Skråfoto viewer
-              </a>
-            </div>
-          </div>
-        )}
-        {imageDataUrl && !loading && (
-          <img
-            src={imageDataUrl}
-            alt={`Luftfoto af ${name} - ${selectedOrientation}`}
-            className="w-full h-full object-cover"
-          />
-        )}
+      {/* Embedded Skråfoto viewer */}
+      <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+        <iframe
+          key={selectedOrientation}
+          src={`${baseUrl}&orientation=${selectedOrientation}`}
+          className="w-full h-full border-0"
+          title={`Luftfoto af ${name}`}
+          allow="fullscreen"
+        />
       </div>
 
-      {photoDate && (
-        <p className="text-xs text-muted-foreground mt-3 text-center">
-          Foto fra {new Date(photoDate).toLocaleDateString('da-DK')} - UTM: {easting}, {northing}
-        </p>
-      )}
+      <p className="text-xs text-muted-foreground mt-3 text-center">
+        Skråfoto fra Dataforsyningen - UTM: {easting}, {northing}
+      </p>
     </motion.div>
   );
 }
