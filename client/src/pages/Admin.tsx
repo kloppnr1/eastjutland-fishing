@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { FishingSpot } from "@shared/schema";
 import { resolveImageUrl } from "@/lib/image-url";
+import { useIsNative } from "@/hooks/use-platform";
 
 interface EditingSpot {
   id: number;
@@ -26,6 +27,7 @@ export default function Admin() {
   const [editingSpot, setEditingSpot] = useState<EditingSpot | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isNative = useIsNative();
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; updates: Partial<FishingSpot>; imageFile?: File | null }) => {
@@ -120,7 +122,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
 
       <div className="container mx-auto px-4 py-8">

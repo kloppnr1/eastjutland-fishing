@@ -6,6 +6,7 @@ import { divIcon, DomEvent } from "leaflet";
 import { Link } from "wouter";
 import { Loader2, Navigation, Video, LocateFixed, Calendar, RotateCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useIsNative } from "@/hooks/use-platform";
 
 // Auto-refreshing webcam image component
 function AutoRefreshImage({ src, alt, className, interval = 5000 }: { src: string; alt: string; className?: string; interval?: number }) {
@@ -1873,6 +1874,7 @@ export default function MapView() {
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [rawForecastData, setRawForecastData] = useState<ForecastData | null>(null);
   const searchString = useSearch();
+  const isNative = useIsNative();
 
   // Compute a hash of weather data to detect when spots have updated weather
   const weatherHash = useMemo(() => {
@@ -1968,7 +1970,7 @@ export default function MapView() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className={`h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
 
       <div className="flex-1 relative" style={{ minHeight: 0 }}>

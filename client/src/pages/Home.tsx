@@ -4,6 +4,7 @@ import { SpotCard } from "@/components/SpotCard";
 import { Loader2, Waves, Search, AlertCircle, Fish, Video } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useIsNative } from "@/hooks/use-platform";
 
 type FilterType = "all" | "fishing" | "webcam";
 
@@ -11,6 +12,7 @@ export default function Home() {
   const { data: spots, isLoading, error } = useSpots();
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+  const isNative = useIsNative();
 
   const filteredSpots = spots?.filter(spot => {
     const matchesSearch = spot.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -20,7 +22,7 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className={`min-h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
       
       {/* Hero Section */}

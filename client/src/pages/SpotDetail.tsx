@@ -12,6 +12,7 @@ import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceL
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useIsNative } from "@/hooks/use-platform";
 
 // Simple dot marker for map preview
 const createSpotMarkerIcon = () => {
@@ -298,10 +299,12 @@ export default function SpotDetail() {
     spot?.latitude || "",
     spot?.longitude || ""
   );
+  const isNative = useIsNative();
+  const nativeClass = isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : '';
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className={`min-h-screen bg-background ${nativeClass}`}>
         <Header />
         <div className="container mx-auto px-4 py-12">
           <div className="h-8 w-32 bg-muted rounded animate-pulse mb-8" />
@@ -313,7 +316,7 @@ export default function SpotDetail() {
 
   if (error || !spot) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className={`min-h-screen bg-background flex flex-col ${nativeClass}`}>
         <Header />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
@@ -330,7 +333,7 @@ export default function SpotDetail() {
   // Simplified webcam view
   if (isWebcam) {
     return (
-      <div className="min-h-screen bg-background flex flex-col pb-20">
+      <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
         <Header />
 
         {/* Back button bar */}
@@ -416,7 +419,7 @@ export default function SpotDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20">
+    <div className={`min-h-screen bg-background flex flex-col ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))]' : 'pb-20'}`}>
       <Header />
 
       {/* Back button bar */}

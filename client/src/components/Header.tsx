@@ -2,9 +2,17 @@ import { Link, useLocation } from "wouter";
 import { Map, List, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoImg from "/logo.png";
+import { useIsNative } from "@/hooks/use-platform";
+import { BottomNav } from "./BottomNav";
 
 export function Header() {
   const [location] = useLocation();
+  const isNative = useIsNative();
+
+  // On native iOS, show bottom nav instead of header
+  if (isNative) {
+    return <BottomNav />;
+  }
 
   return (
     <>
