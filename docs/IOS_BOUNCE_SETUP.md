@@ -2,32 +2,27 @@
 
 Enable the native iOS bounce (rubber-band) effect when scrolling.
 
-## Option 1: Plugin (Recommended)
+## Current Setup (Plugin)
 
-Use the [capacitor-plugin-ios-webview-configurator](https://github.com/niceplugin/capacitor-plugin-ios-webview-configurator) plugin:
+This project uses [capacitor-plugin-ios-webview-configurator](https://github.com/cellular/capacitor-plugin-ios-webview-configurator).
 
-```bash
-npm install capacitor-plugin-ios-webview-configurator
-npx cap sync
-```
-
-Then in your app's main entry (e.g., `main.tsx`):
+Already configured in `client/src/main.tsx`:
 
 ```typescript
-import { Capacitor } from '@capacitor/core';
-
-if (Capacitor.getPlatform() === 'ios') {
-  import('capacitor-plugin-ios-webview-configurator').then(({ setWebviewBounce }) => {
+if (Capacitor.getPlatform() === "ios") {
+  import("capacitor-plugin-ios-webview-configurator").then(({ setWebviewBounce }) => {
     setWebviewBounce(true);
   });
 }
 ```
 
-Rebuild with `npm run build:ios` and run.
+Just rebuild with `npm run build:ios` and run.
 
-## Option 2: Objective-C Override
+---
 
-If you prefer not to add a plugin, create an Objective-C file:
+## Alternative: Objective-C Override
+
+If the plugin doesn't work, use this native approach:
 
 1. Open the iOS project:
    ```bash
@@ -55,6 +50,8 @@ If you prefer not to add a plugin, create an Objective-C file:
    ```
 
 6. Build and run (Cmd+R)
+
+This overrides `didMoveToWindow` on ALL UIScrollViews, including WKWebView's internal scroll view.
 
 ## Sources
 
