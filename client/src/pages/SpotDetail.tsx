@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { useRoute, Link } from "wouter";
 import {
   ArrowLeft, Thermometer, Clock,
-  Fish, Wind, Info, Navigation, TrendingUp, MapPin, Video, RefreshCw
+  Fish, Wind, Info, Navigation, TrendingUp, MapPin, Video, RefreshCw, Camera, Compass
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
@@ -12,6 +12,88 @@ import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceL
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import proj4 from "proj4";
+
+// Define ETRS89 / UTM zone 32N (EPSG:25832) projection for Denmark
+proj4.defs("EPSG:25832", "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+
+// Convert WGS84 (lat/lng) to UTM ETRS89 coordinates for Skråfoto
+function toUTM(lat: number, lng: number): { easting: number; northing: number } {
+  const [easting, northing] = proj4("EPSG:4326", "EPSG:25832", [lng, lat]);
+  return { easting: Math.round(easting), northing: Math.round(northing) };
+}
+
+// Skråfoto aerial photo section
+function SkraafotoSection({ lat, lng, name }: { lat: number; lng: number; name: string }) {
+  const { easting, northing } = toUTM(lat, lng);
+  const baseUrl = `https://skraafoto.dataforsyningen.dk/?center=${easting},${northing}`;
+
+  const orientations = [
+    { key: "north", label: "Nord", icon: "↑" },
+    { key: "east", label: "Øst", icon: "→" },
+    { key: "south", label: "Syd", icon: "↓" },
+    { key: "west", label: "Vest", icon: "←" },
+    { key: "nadir", label: "Top", icon: "●" },
+  ];
+
+  const [selectedOrientation, setSelectedOrientation] = useState("north");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35 }}
+      className="bg-card rounded-3xl p-8 shadow-xl border border-border/50"
+    >
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-display font-bold flex items-center">
+          <Camera className="w-6 h-6 text-primary mr-3" />
+          Luftfoto
+        </h2>
+        <a
+          href={`${baseUrl}&orientation=${selectedOrientation}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-sm font-medium transition-colors"
+        >
+          Åbn i Skråfoto
+        </a>
+      </div>
+
+      {/* Orientation selector */}
+      <div className="flex justify-center gap-2 mb-4">
+        {orientations.map((o) => (
+          <button
+            key={o.key}
+            onClick={() => setSelectedOrientation(o.key)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              selectedOrientation === o.key
+                ? "bg-primary text-white"
+                : "bg-muted hover:bg-muted/80 text-muted-foreground"
+            }`}
+          >
+            <span className="mr-1">{o.icon}</span>
+            {o.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Embedded iframe */}
+      <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+        <iframe
+          src={`${baseUrl}&orientation=${selectedOrientation}`}
+          className="w-full h-full"
+          title={`Luftfoto af ${name}`}
+          loading="lazy"
+        />
+      </div>
+
+      <p className="text-xs text-muted-foreground mt-3 text-center">
+        Skråfoto fra Dataforsyningen - UTM: {easting}, {northing}
+      </p>
+    </motion.div>
+  );
+}
 
 // Simple dot marker for map preview
 const createSpotMarkerIcon = () => {
@@ -626,6 +708,13 @@ export default function SpotDetail() {
 
             {/* Mini Map */}
             <MiniMap
+              lat={Number(spot.latitude)}
+              lng={Number(spot.longitude)}
+              name={spot.name}
+            />
+
+            {/* Skråfoto aerial photos */}
+            <SkraafotoSection
               lat={Number(spot.latitude)}
               lng={Number(spot.longitude)}
               name={spot.name}
