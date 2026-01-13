@@ -8,4 +8,5 @@ server/public
 vite.config.ts.*
 *.tar.gz
 test-results/
-playwright-report/
+playwright-report/ios/
+*.DS_Store
