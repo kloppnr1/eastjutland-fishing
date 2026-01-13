@@ -8,7 +8,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/95 border-b border-border/40 pt-[env(safe-area-inset-top)] before:absolute before:bottom-full before:left-0 before:right-0 before:h-[500px] before:bg-background">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-lg bg-background/95 border-b border-border/40 pt-[env(safe-area-inset-top)]">
         <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <img
