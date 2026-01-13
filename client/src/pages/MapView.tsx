@@ -1972,7 +1972,7 @@ export default function MapView() {
   };
 
   return (
-    <div className={`h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : ''}`}>
+    <div className={`h-screen flex flex-col bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(3.5rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
 
       <div className="flex-1 relative" style={{ minHeight: 0 }}>

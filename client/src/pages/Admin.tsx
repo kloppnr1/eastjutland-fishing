@@ -122,7 +122,7 @@ export default function Admin() {
   };
 
   return (
-    <div className={`min-h-screen bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(2.25rem+env(safe-area-inset-bottom))]' : ''}`}>
+    <div className={`min-h-screen bg-background ${isNative ? 'pt-[env(safe-area-inset-top)] pb-[calc(3.5rem+env(safe-area-inset-bottom))]' : ''}`}>
       <Header />
 
       <div className="container mx-auto px-4 py-8">

@@ -13,7 +13,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/40 pb-[env(safe-area-inset-bottom)] select-none">
-      <div className="flex items-center justify-around h-9">
+      <div className="flex items-center justify-around h-14">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = location === href;
           return (
@@ -21,14 +21,14 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center justify-center px-4 h-full",
+                "flex flex-col items-center justify-center gap-0.5 px-6 h-full",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground"
               )}
             >
-              <Icon className="w-4 h-4" />
-              <span className={cn("text-[10px] leading-tight", isActive && "font-semibold")}>
+              <Icon className="w-6 h-6" />
+              <span className={cn("text-xs", isActive && "font-semibold")}>
                 {label}
               </span>
             </Link>
