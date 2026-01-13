@@ -26,7 +26,7 @@ export default function Home() {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden bg-primary/5">
+      <section className="relative py-8 md:py-12 overflow-hidden bg-primary/5">
         <div className="absolute inset-0 bg-[url('https://pixabay.com/get/gd15f9ca443fd1556bb5356f4e6d8ea88544b4dcb5d4f594a9e2478cd78ccbb33c888f339825730c9e6522211a9d2db25bad150fd124d1782ff46bc200348893a_1280.png')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
         <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
           <motion.div
@@ -34,9 +34,6 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-accent/10 text-accent font-semibold text-sm mb-6 border border-accent/20">
-              Fiskevejr i realtid
-            </span>
             <h1 className="text-5xl md:text-7xl font-display font-bold text-primary mb-6 tracking-tight">
               Lystfiskeri på <span className="text-accent">Østjylland</span>
             </h1>
@@ -99,7 +96,7 @@ export default function Home() {
       </section>
 
       {/* Main Content */}
-      <main className="flex-grow container mx-auto px-4 md:px-6 py-16">
+      <main className="flex-grow container mx-auto px-4 md:px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-display font-bold text-primary flex items-center gap-2">
             <Waves className="w-6 h-6 text-accent" />
