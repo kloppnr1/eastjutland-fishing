@@ -56,9 +56,10 @@ async function fetchSkraafotoImageUrl(lat: number, lng: number, direction: strin
 async function loadCogPreview(tifUrl: string): Promise<string | null> {
   try {
     const tiff = await GeoTIFF.fromUrl(tifUrl);
-    // Get the smallest overview (last image in the file) for fast loading
+    // Use overview index 2 for good quality (~2640x3536 pixels)
+    // Index 0 = full res, higher index = smaller
     const imageCount = await tiff.getImageCount();
-    const overviewIndex = Math.min(imageCount - 1, 4); // Use 5th overview or last available
+    const overviewIndex = Math.min(2, imageCount - 1); // Use 3rd level for quality
     const image = await tiff.getImage(overviewIndex);
 
     const width = image.getWidth();
