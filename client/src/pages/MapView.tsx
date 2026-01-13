@@ -2068,7 +2068,7 @@ export default function MapView() {
 
             {/* Fishing spots (clustered) */}
             <MarkerClusterGroup
-              key={`cluster-${currentZoom}`}
+              key={`cluster-${currentZoom}-${selectedDateTime.getTime()}`}
               chunkedLoading
               iconCreateFunction={createClusterIconFactory(spots, badgeScale)}
               maxClusterRadius={60}
