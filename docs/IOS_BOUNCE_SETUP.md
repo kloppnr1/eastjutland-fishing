@@ -2,7 +2,9 @@
 
 Enable the native iOS bounce (rubber-band) effect when scrolling.
 
-## Quick Setup
+## Setup
+
+### Step 1: Create Custom View Controller
 
 1. Open the iOS project in Xcode:
    ```bash
@@ -15,35 +17,58 @@ Enable the native iOS bounce (rubber-band) effect when scrolling.
 
 4. Choose **Swift File**, click Next
 
-5. Name it `BridgeExtension.swift`, click Create
+5. Name it `MyViewController.swift`, click Create
 
 6. If prompted about bridging header, click **Don't Create**
 
 7. Replace the file contents with:
    ```swift
+   import UIKit
    import Capacitor
 
-   extension CAPBridgeViewController {
-       open override func viewDidAppear(_ animated: Bool) {
-           super.viewDidAppear(animated)
-           webView?.scrollView.bounces = true
-           webView?.scrollView.alwaysBounceVertical = true
+   class MyViewController: CAPBridgeViewController {
+       override func viewDidLoad() {
+           super.viewDidLoad()
+
+           // Enable bounce effect
+           DispatchQueue.main.async {
+               self.webView?.scrollView.bounces = true
+               self.webView?.scrollView.alwaysBounceVertical = true
+           }
        }
    }
    ```
 
-8. Press **Cmd+R** to build and run
+### Step 2: Update AppDelegate
 
-Done! The app should now have the native iOS bounce effect.
+1. Open **App → App → AppDelegate.swift**
+
+2. Find the `application` function (around line 6)
+
+3. Replace it with:
+   ```swift
+   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+       self.window?.rootViewController = MyViewController()
+       self.window?.makeKeyAndVisible()
+       return true
+   }
+   ```
+
+### Step 3: Build and Run
+
+Press **Cmd+R** to build and run.
 
 ## Troubleshooting
 
 **Build error: "Cannot find type CAPBridgeViewController"**
 - Make sure you have `import Capacitor` at the top
 
+**Build error: "Value of type 'AppDelegate' has no member 'window'"**
+- Add this property to AppDelegate class:
+  ```swift
+  var window: UIWindow?
+  ```
+
 **Bounce still not working**
 - Clean build: **Product → Clean Build Folder** (Shift+Cmd+K)
 - Rebuild and run again
-
-**Changes lost after `cap sync`**
-- The `ios/` folder is not overwritten by sync, so your Swift code persists
