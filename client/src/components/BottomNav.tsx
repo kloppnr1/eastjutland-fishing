@@ -21,16 +21,13 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-6 py-2 rounded-lg transition-colors",
+                "flex items-center justify-center p-2 rounded-lg transition-colors",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground"
               )}
             >
-              <Icon className={cn("w-6 h-6", isActive && "text-primary")} />
-              <span className={cn("text-xs font-medium", isActive && "font-semibold")}>
-                {label}
-              </span>
+              <Icon className="w-5 h-5" />
             </Link>
           );
         })}
