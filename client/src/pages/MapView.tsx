@@ -2134,10 +2134,16 @@ export default function MapView() {
         />
 
         {/* Spot count */}
-        <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] right-6 z-[1000]">
-          <div className="bg-white rounded-xl shadow-lg px-4 py-2">
-            <span className="font-bold text-primary">{spots?.length || 0}</span>
-            <span className="text-muted-foreground ml-1">fiskesteder</span>
+        <div className="absolute top-[calc(0.5rem+env(safe-area-inset-top))] right-2 sm:top-[calc(1.5rem+env(safe-area-inset-top))] sm:right-6 z-[1000]">
+          <div className="bg-white rounded-xl shadow-lg px-3 py-2 flex flex-col gap-1 text-sm">
+            <div>
+              <span className="font-bold text-blue-600">{spots?.filter(s => s.spotType !== "webcam").length || 0}</span>
+              <span className="text-muted-foreground ml-1">fiskesteder</span>
+            </div>
+            <div>
+              <span className="font-bold text-purple-600">{spots?.filter(s => s.spotType === "webcam").length || 0}</span>
+              <span className="text-muted-foreground ml-1">webcams</span>
+            </div>
           </div>
         </div>
 
