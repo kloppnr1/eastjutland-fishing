@@ -10,3 +10,6 @@ vite.config.ts.*
 test-results/
 playwright-report/ios/
 *.DS_Store
+ios/
+client/dist-static/
+generate-splash.ts
