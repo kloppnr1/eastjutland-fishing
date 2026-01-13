@@ -56,18 +56,22 @@ async function fetchSkraafotoImageUrl(lat: number, lng: number, direction: strin
 async function loadCogPreview(tifUrl: string): Promise<string | null> {
   try {
     const tiff = await GeoTIFF.fromUrl(tifUrl);
-    // Use overview index 2 for good quality (~2640x3536 pixels)
-    // Index 0 = full res, higher index = smaller
+    // Use overview index 3 for balanced quality/size (~1320x1768 pixels)
     const imageCount = await tiff.getImageCount();
-    const overviewIndex = Math.min(2, imageCount - 1); // Use 3rd level for quality
+    const overviewIndex = Math.min(3, imageCount - 1);
     const image = await tiff.getImage(overviewIndex);
 
     const width = image.getWidth();
     const height = image.getHeight();
+    const samplesPerPixel = image.getSamplesPerPixel();
 
-    // Read RGB data
-    const rasters = await image.readRasters({ interleave: true });
-    const data = rasters as unknown as Uint8Array;
+    console.log(`Loading Skråfoto: ${width}x${height}, ${samplesPerPixel} channels`);
+
+    // Read RGB data - use pool for better performance
+    const rasters = await image.readRasters({
+      interleave: true,
+      pool: new GeoTIFF.Pool()
+    });
 
     // Create canvas and draw image
     const canvas = document.createElement("canvas");
@@ -77,18 +81,22 @@ async function loadCogPreview(tifUrl: string): Promise<string | null> {
     if (!ctx) return null;
 
     const imageData = ctx.createImageData(width, height);
+    const data = new Uint8Array(rasters as ArrayBuffer);
 
-    // Copy RGB data (handle 3 or 4 channels)
-    const samplesPerPixel = image.getSamplesPerPixel();
+    // Copy RGB data to RGBA canvas format
     for (let i = 0; i < width * height; i++) {
-      imageData.data[i * 4] = data[i * samplesPerPixel];     // R
-      imageData.data[i * 4 + 1] = data[i * samplesPerPixel + 1]; // G
-      imageData.data[i * 4 + 2] = data[i * samplesPerPixel + 2]; // B
-      imageData.data[i * 4 + 3] = 255; // A
+      const srcIdx = i * samplesPerPixel;
+      const dstIdx = i * 4;
+      imageData.data[dstIdx] = data[srcIdx];         // R
+      imageData.data[dstIdx + 1] = data[srcIdx + 1]; // G
+      imageData.data[dstIdx + 2] = data[srcIdx + 2]; // B
+      imageData.data[dstIdx + 3] = 255;              // A
     }
 
     ctx.putImageData(imageData, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.85);
+
+    // Use PNG for better quality (no compression artifacts)
+    return canvas.toDataURL("image/png");
   } catch (err) {
     console.error("Failed to load COG:", err);
     return null;
