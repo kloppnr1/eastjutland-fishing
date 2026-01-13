@@ -565,9 +565,10 @@ export default function SpotDetail() {
                           `${value?.toFixed(1)}°C`,
                           name === 'futureTemp' ? 'Prognose' : 'Vandtemp'
                         ]}
-                        labelFormatter={(position, payload) => {
-                          if (payload && payload[0]) {
-                            return payload[0].payload?.label || '';
+                        labelFormatter={(_position, payload) => {
+                          const items = payload as Array<{ payload?: { label?: string } }>;
+                          if (items && items[0]) {
+                            return items[0].payload?.label || '';
                           }
                           return '';
                         }}
