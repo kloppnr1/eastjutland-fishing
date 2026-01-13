@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
     // cleartext: true
   },
   ios: {
-    contentInset: 'never',
+    contentInset: 'scrollableAxes',
     backgroundColor: '#f9fafb',
     preferredContentMode: 'mobile'
   }
