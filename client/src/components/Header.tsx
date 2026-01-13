@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Map, List, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logoImg from "/logo.png";
 
 export function Header() {
   const [location] = useLocation();
@@ -10,7 +11,7 @@ export function Header() {
       <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="Østjylland Lystfiskerguide"
             className="w-12 h-12 group-hover:scale-105 transition-transform"
           />

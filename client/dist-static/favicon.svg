@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="5" r="3"/>
-  <line x1="12" y1="22" x2="12" y2="8"/>
-  <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Fish body - elliptical shape -->
+  <ellipse cx="10" cy="12" rx="7" ry="4"/>
+  <!-- Fish tail -->
+  <path d="M17 12 L21 8 L21 16 Z" fill="none"/>
+  <!-- Fish eye -->
+  <circle cx="6" cy="11" r="1" fill="#1e3a5f"/>
+  <!-- Fish top fin -->
+  <path d="M9 8 Q11 5 13 8"/>
+  <!-- Fish bottom fin -->
+  <path d="M9 16 Q10 18 12 16"/>
+  <!-- Fish gill line -->
+  <path d="M8 10 Q7 12 8 14"/>
 </svg>
