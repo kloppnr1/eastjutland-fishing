@@ -11,8 +11,9 @@ test.describe('Map Badge Click Detection', () => {
   });
 
   test('clicking on badge expands it', async ({ page }) => {
-    // Find a weather badge marker
-    const badge = page.locator('.weather-badge-marker').first();
+    // Find a weather badge marker (use last() to avoid header overlap)
+    const badge = page.locator('.weather-badge-marker').last();
+    await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();
 
     // Click on the badge (the white box part)
@@ -28,8 +29,9 @@ test.describe('Map Badge Click Detection', () => {
   });
 
   test('clicking on anchor dot expands badge', async ({ page }) => {
-    // Find a weather badge marker
-    const badge = page.locator('.weather-badge-marker').first();
+    // Find a weather badge marker (use last() to avoid header overlap)
+    const badge = page.locator('.weather-badge-marker').last();
+    await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();
 
     // Click on the anchor dot (blue circle)
@@ -41,8 +43,9 @@ test.describe('Map Badge Click Detection', () => {
   });
 
   test('clicking empty space near badge does NOT expand it', async ({ page }) => {
-    // Get first badge position
-    const badge = page.locator('.weather-badge-marker').first();
+    // Get badge position (use last() to avoid header overlap)
+    const badge = page.locator('.weather-badge-marker').last();
+    await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();
 
     const box = await badge.boundingBox();
@@ -128,8 +131,9 @@ test.describe('Map Badge Click Detection', () => {
   });
 
   test('clicking map with fish spot expanded closes badge without showing temp badge', async ({ page }) => {
-    // Find a fish spot badge
-    const badge = page.locator('.weather-badge-marker').first();
+    // Find a fish spot badge (use last() to avoid header overlap)
+    const badge = page.locator('.weather-badge-marker').last();
+    await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();
 
     // Click to expand the badge
@@ -200,8 +204,9 @@ test.describe('Expanded Badge', () => {
   });
 
   test('expanded badge shows spot details', async ({ page }) => {
-    // Find and click a badge
-    const badge = page.locator('.weather-badge-marker').first();
+    // Find and click a badge (use last() to avoid header overlap)
+    const badge = page.locator('.weather-badge-marker').last();
+    await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();
 
     // Click the badge to expand
